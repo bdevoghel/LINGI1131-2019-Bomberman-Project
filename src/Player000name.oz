@@ -19,15 +19,14 @@ in
       end
       {NewPort Stream Port}
       thread
-	 {TreatStream OutputStream}
+	      {TreatStream OutputStream}
       end
       Port
    end
-
    
    proc{TreatStream Stream} %% TODO you may add some arguments if needed
       %% TODO complete
+      skip
    end
    
-
 end
