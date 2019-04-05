@@ -11,6 +11,12 @@
 PLAYERS = Player000name.oz
 COMPILABLES = PlayerManager.oz GUI.oz Main.oz
 
+<<<<<<< HEAD
+=======
+PLAYERS = Player000name.oz
+COMPILABLES = PlayerManager.oz GUI.oz Main.oz
+
+>>>>>>> 7ece590de473d778713f9cd9b169e2af743f3a88
 all:
 	clean
 	compile
