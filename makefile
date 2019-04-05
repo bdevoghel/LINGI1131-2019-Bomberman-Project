@@ -8,15 +8,11 @@
 
 # TODO write your makefile here
 
-PLAYERS = Player000name.oz
-COMPILABLES = PlayerManager.oz GUI.oz Main.oz
+PLAYERS = src/Player000name.oz
+PLAYERSexe = bin/Player000name.ozf
+COMPILABLES = src/PlayerManager.oz src/GUI.oz src/Main.oz
+EXECUTABLES = bin/PlayerManager.ozf bin/GUI.ozf bin/Main.ozf
 
-<<<<<<< HEAD
-=======
-PLAYERS = Player000name.oz
-COMPILABLES = PlayerManager.oz GUI.oz Main.oz
-
->>>>>>> 7ece590de473d778713f9cd9b169e2af743f3a88
 all:
 	clean
 	compile
@@ -25,10 +21,10 @@ all:
 	run
 
 compile:
-	ozc -c src/$(COMPILABLES) -o bin/"$(COMPILABLES)f"
+	ozc -c $(COMPILABLES) -o $(EXECUTABLES)
 
 compilePlayers:
-	ozc -c src/$(PLAYERS) -o bin/"$(PLAYERS)f"
+	ozc -c $(PLAYERS) -o $(PLAYERSexe)
 	# + others
 
 compileInput:
@@ -38,5 +34,5 @@ run:
 	ozengine bin/Main.ozf
 
 clean:
-	rm -v bin/"$(COMPILABLES)f"
-	rm -v bin/"$(PLAYERS)f"
+	rm -v $(EXECUTABLES)
+	rm -v $(PLAYERSexe)
