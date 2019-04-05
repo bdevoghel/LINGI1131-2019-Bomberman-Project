@@ -6,13 +6,6 @@
 
 # TODO complete the header with your group number, your noma's and full names
 
-# TODO write your makefile here
-
-PLAYERS = src/Player000name.oz
-PLAYERSexe = bin/Player000name.ozf
-COMPILABLES = src/PlayerManager.oz src/GUI.oz src/Main.oz
-EXECUTABLES = bin/PlayerManager.ozf bin/GUI.ozf bin/Main.ozf
-
 all:
 	clean
 	compile
@@ -21,10 +14,12 @@ all:
 	run
 
 compile:
-	ozc -c $(COMPILABLES) -o $(EXECUTABLES)
+	ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
+	ozc -c src/GUI.oz -o bin/GUI.ozf
+	ozc -c src/Main.oz -o bin/Main.ozf
 
 compilePlayers:
-	ozc -c $(PLAYERS) -o $(PLAYERSexe)
+	ozc -c src/Player000name.oz -o bin/Player000name.ozf
 	# + others
 
 compileInput:
@@ -34,5 +29,6 @@ run:
 	ozengine bin/Main.ozf
 
 clean:
-	rm -v $(EXECUTABLES)
-	rm -v $(PLAYERSexe)
+	rm -v bin/PlayerManager.ozf
+	rm -v bin/GUI.ozf
+	rm -v bin/Main.ozf
