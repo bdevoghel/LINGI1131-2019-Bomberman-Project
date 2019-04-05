@@ -7,15 +7,15 @@
 # TODO complete the header with your group number, your noma's and full names
 
 all:
-	clean
-	compile
-	compilePlayers
-	compileInput
-	run
+	#make clean
+	make compile
+	make compilePlayers
+	make compileInput
+	make run
 
 compile:
-	ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
-	ozc -c src/GUI.oz -o bin/GUI.ozf
+	#ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
+	#ozc -c src/GUI.oz -o bin/GUI.ozf
 	ozc -c src/Main.oz -o bin/Main.ozf
 
 compilePlayers:
@@ -29,6 +29,6 @@ run:
 	ozengine bin/Main.ozf
 
 clean:
-	rm -v bin/PlayerManager.ozf
-	rm -v bin/GUI.ozf
-	rm -v bin/Main.ozf
+	rm -fv bin/PlayerManager.ozf
+	rm -fv bin/GUI.ozf
+	rm -fv bin/Main.ozf
