@@ -8,5 +8,6 @@ define
 in
    %% Implement your controller here
    skip
+{GUI.buildWindow}
 
 end
