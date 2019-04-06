@@ -47,25 +47,28 @@ in
 
       % configure rows and set headers
       for N in 1..Input.nbRow do
-	 {Grid rowconfigure(N minsize:50 weight:0 pad:5)}
+	      {Grid rowconfigure(N minsize:50 weight:0 pad:5)}
       end
+
       % configure columns and set headers
       for N in 1..Input.nbColumn do
-	 {Grid columnconfigure(N minsize:50 weight:0 pad:5)}
+	      {Grid columnconfigure(N minsize:50 weight:0 pad:5)}
       end
+
       % configure lifeboard
       {GridLife rowconfigure(1 minsize:50 weight:0 pad:5)}
       {GridLife columnconfigure(1 minsize:50 weight:0 pad:5)}
       {GridLife configure(label(text:"life" width:1 height:1) row:1 column:1 sticky:wesn)}
       for N in 1..(Input.nbBombers) do
-	 {GridLife columnconfigure(N+1 minsize:50 weight:0 pad:5)}
+	      {GridLife columnconfigure(N+1 minsize:50 weight:0 pad:5)}
       end
+
       % configure scoreboard
       {GridScore rowconfigure(1 minsize:50 weight:0 pad:5)}
       {GridScore columnconfigure(1 minsize:50 weight:0 pad:5)}
       {GridScore configure(label(text:"score" width:1 height:1) row:1 column:1 sticky:wesn)}
       for N in 1..(Input.nbBombers) do
-	 {GridScore columnconfigure(N+1 minsize:50 weight:0 pad:5)}
+	      {GridScore columnconfigure(N+1 minsize:50 weight:0 pad:5)}
       end
       
       {DrawMap Grid}
@@ -89,23 +92,24 @@ in
 		 fire:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:red) end 
 		)
    
+
 %%%%% Function to draw the map
    proc{DrawMap Grid}
       proc{DrawColumn Column M N}
-	 case Column
-	 of nil then skip
-	 [] T|End then
-	    {Grid configure(Squares.T row:M column:N sticky:wesn)}
-	    {DrawColumn End M N+1}
-	 end
+	      case Column
+	      of nil then skip
+	      [] T|End then
+	            {Grid configure(Squares.T row:M column:N sticky:wesn)}
+	            {DrawColumn End M N+1}
+	      end
       end
       proc{DrawRow Row M}
-	 case Row
-	 of nil then skip
-	 [] T|End then
-	    {DrawColumn T M 1}
-	    {DrawRow End M+1}
-	 end
+         case Row
+         of nil then skip
+         [] T|End then
+            {DrawColumn T M 1}
+            {DrawRow End M+1}
+         end
       end
    in
       {DrawRow Input.map 1}
@@ -125,8 +129,8 @@ in
          case Column 
          of nil then skip
          [] 0|End then BombH FireH in
-	    {CreateRemove {Items.bomb BombH} M N true}
-	    {CreateRemove {Items.fire FireH} M N true}
+            {CreateRemove {Items.bomb BombH} M N true}
+            {CreateRemove {Items.fire FireH} M N true}
             Res.M.N = items(box:null bonus:null point:null bomb:BombH fire:FireH)
             {PrepareColumn End M N+1}
          [] 1|End then
@@ -135,38 +139,40 @@ in
          [] 2|End then BoxH PointH BombH FireH  in
             {CreateRemove {Items.boxpoint BoxH} M N false}
             {CreateRemove {Items.point PointH} M N true}
-	    {CreateRemove {Items.bomb BombH} M N true}
-	    {CreateRemove {Items.fire FireH} M N true}
+            {CreateRemove {Items.bomb BombH} M N true}
+            {CreateRemove {Items.fire FireH} M N true}
             Res.M.N = items(box:BoxH bonus:null point:PointH bomb:BombH fire:FireH)
             {PrepareColumn End M N+1}
          [] 3|End then BoxH BonusH BombH FireH  in
             {CreateRemove {Items.boxbonus BoxH} M N false}
             {CreateRemove {Items.bonus BonusH} M N true}
-	    {CreateRemove {Items.bomb BombH} M N true}
-	    {CreateRemove {Items.fire FireH} M N true}
+            {CreateRemove {Items.bomb BombH} M N true}
+            {CreateRemove {Items.fire FireH} M N true}
             Res.M.N = items(box:BoxH bonus:BonusH point:null bomb:BombH fire:FireH)
             {PrepareColumn End M N+1}
          [] 4|End then BombH FireH in
-	    {CreateRemove {Items.bomb BombH} M N true}
-	    {CreateRemove {Items.fire FireH} M N true}
+            {CreateRemove {Items.bomb BombH} M N true}
+            {CreateRemove {Items.fire FireH} M N true}
             Res.M.N = items(box:null bonus:null point:null bomb:BombH fire:FireH)
             {PrepareColumn End M N+1}
          end
       end
       proc{PrepareRow Row M}
-	 case Row
-	 of nil then skip
-	 [] T|End then
+	      case Row
+         of nil then skip
+         [] T|End then
             Res.M = {Tuple.make items Input.nbColumn} 
-	    {PrepareColumn T M 1}
+            {PrepareColumn T M 1}
             {PrepareRow End M+1}
-	 end
+         end
       end
    in
       Res = {Tuple.make items Input.nbRow} 
       {PrepareRow Input.map 1}
       Res
    end
+
+
 %%%%% Init the Player
    fun{InitPlayer Grid ID}
       Handle HandleLife HandleScore Id Color LabelPlayer LabelLife LabelScore
@@ -188,7 +194,6 @@ in
       {Handle set(Life)}
    end
 
-
    proc{ApplyTo Grid Pos Label Fun}
       Row Col Square
    in 
@@ -198,12 +203,14 @@ in
          {Fun Grid Square Row Col}
       end
    end
+
    proc{ApplyToHandle Grid Handle Pos Fun}
       Row Col
    in 
       Pos = pt(x:Col y:Row)
       {Fun Grid Handle Row Col}
    end
+
    proc{ApplyToHandle2 Grid Handle Fun}
       {Fun Grid Handle _ _}
    end
@@ -212,24 +219,25 @@ in
       {Grid.grid configure(Handle row:Row column:Col)}
       {Handle 'raise'()}
    end
+
    proc{Hide Grid Handle Row Col}
       {Grid.grid remove(Handle)}
    end
+
    proc{Move Grid Handle Row Col}
       {Hide Grid Handle Row Col}
       {Spawn Grid Handle Row Col}
    end
    
-   
    fun{StateModification Grid Wanted State Fun}
       case State
       of nil then nil
       [] guiPlayer(id:ID life:_ score:_ player:_)|Next then
-	 if (ID == Wanted) then
-	    {Fun Grid State.1}|Next
-	 else
-	    State.1|{StateModification Grid Wanted Next Fun}
-	 end
+	      if (ID == Wanted) then
+	         {Fun Grid State.1}|Next
+	      else
+	         State.1|{StateModification Grid Wanted Next Fun}
+	      end
       end
    end
 
@@ -245,7 +253,7 @@ in
          OutputStream = {Projet2019util.portWindowChecker Stream}
       end
       thread
-	 {TreatStream OutputStream nil nil}
+	      {TreatStream OutputStream nil nil}
       end
       Port
    end
@@ -257,20 +265,20 @@ in
       [] H|T then
          case H 
          of buildWindow then NewGrid in 
-	    NewGrid = {BuildWindow}
-	    {TreatStream T NewGrid {Tuple.make players Input.nbBombers}}
+            NewGrid = {BuildWindow}
+            {TreatStream T NewGrid {Tuple.make players Input.nbBombers}}
          [] initPlayer(ID) then
             Players.(ID.id) = {InitPlayer Grid ID}
-	    {TreatStream T Grid Players}
+            {TreatStream T Grid Players}
          [] spawnPlayer(ID Pos) then
             {ApplyToHandle Grid Players.(ID.id).player Pos Spawn}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] movePlayer(ID Pos) then
             {ApplyToHandle Grid Players.(ID.id).player Pos Move}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] hidePlayer(ID) then
             {ApplyToHandle2 Grid Players.(ID.id).player Hide}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] lifeUpdate(ID Life) then
             {UpdateValue Players.(ID.id).life Life}
             {TreatStream T Grid Players}
@@ -279,36 +287,36 @@ in
             {TreatStream T Grid Players}
          [] spawnBonus(Pos) then
             {ApplyTo Grid Pos bonus Spawn}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] hideBonus(Pos) then
             {ApplyTo Grid Pos bonus Hide}
-	    {TreatStream T Grid Players}
+	        {TreatStream T Grid Players}
          [] spawnPoint(Pos) then
             {ApplyTo Grid Pos point Spawn}
-	    {TreatStream T Grid Players}
+	        {TreatStream T Grid Players}
          [] hidePoint(Pos) then
             {ApplyTo Grid Pos point Hide}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] spawnFire(Pos) then
             {ApplyTo Grid Pos fire Spawn}
-	    {TreatStream T Grid Players}
+            {TreatStream T Grid Players}
          [] hideFire(Pos) then
             {ApplyTo Grid Pos fire Hide}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] spawnBomb(Pos) then
             {ApplyTo Grid Pos bomb Spawn}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] hideBomb(Pos) then
             {ApplyTo Grid Pos bomb Hide}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] hideBox(Pos) then
             {ApplyTo Grid Pos box Hide}
-	    {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] displayWinner(ID) then
-	    {Browser.browse 'the winner is '#ID}
+            {Browser.browse 'the winner is '#ID}
          else
-	    {Browser.browse 'unsupported message'#H}
-	    {TreatStream T Grid Players}
+            {Browser.browse 'unsupported message'#H}
+            {TreatStream T Grid Players}
          end
       end
    end

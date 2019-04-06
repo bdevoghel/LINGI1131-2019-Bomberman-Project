@@ -3,25 +3,77 @@ import
    GUI
    Input
    PlayerManager
+
+   System(show:Show)
    Browser(browse:Browse)
-   %Time %(delay:Delay)
-   OS
-   %Application
-   %System(show:Show)
+   OS % for Delay
+   Lists
 define
    Board
-   PortBomber1
-   Bomber1
+   Bombers
+   PortBombers
+
+   fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
+      % TODO
+
+      % for given map
+      spawnLocations(pt(x:2 y:2) pt(x:12 y:2) pt(x:2 y:6) pt(x:12 y:6)) 
+
+      % TODO : randomize order
+   end
+   SpawnLocations
+
+   TurnByTurnGameSpeed = 2000 % msec between each turn
+
 in
-   %% Implement your controller here
+
    Board = {GUI.portWindow}
    {Send Board buildWindow}
-   Bomber1 = bomber(id:1 color:red name:player000bomber)
-   PortBomber1 = {PlayerManager.playerGenerator player000bomber Bomber1}
-   {Send Board initPlayer(Bomber1)}
-   {Delay 4000}
-   {Send Board spawnPlayer(Bomber1 pt(x:2 y:2))}
-   {Delay 3000}
-   {Send Board movePlayer(Bomber1 pt(x:3 y:2))}
+
+   Bombers = {MakeTuple '#' Input.nbBombers}
+   PortBombers = {MakeTuple '#' Input.nbBombers}
+
+   % initialise bombers
+   for I in 1..Input.nbBombers do
+      Bombers.I = bomber(id:I color:{List.nth Input.colorsBombers I} name:{List.nth Input.bombers I})
+      PortBombers.I = {PlayerManager.playerGenerator {List.nth Input.bombers I} Bombers.I}
+   end
+
+   % initialise players on board
+   for I in 1..Input.nbBombers do
+      {Send Board initPlayer(Bombers.I)}
+   end
+
+   {Delay 500} % wait for board do be displayed properly
+
+   % spawn players
+   SpawnLocations = {FindSpawnLocations}
+   for I in 1..Input.nbBombers do ID Pos in
+      {Send PortBombers.I assignSpawn(SpawnLocations.I)} % only at game initialisation
+
+      {Send Board spawnPlayer(Bombers.I SpawnLocations.I)} % tell board to display player
+      {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
+   end
+
+   for N in 1..10 do % do 10 turns
+      {Delay TurnByTurnGameSpeed}
+
+      for I in 1..Input.nbBombers do % for every player
+         ID Action
+      in
+         {Send PortBombers.I doaction(ID Action)}
+         case Action
+         of move(Pos) then 
+            {Send Board movePlayer(Bombers.I Pos)}
+         [] bomb(Pos) then 
+            {Send Board spawnBomb(Pos)}
+         [] null then 
+            {Show 'ACTION null on turn '#N}
+         else {Show 'ERROR : UNKNOWN ACTION'}
+         end
+      end
+
+      {Browse N}
+   end
 
 end
