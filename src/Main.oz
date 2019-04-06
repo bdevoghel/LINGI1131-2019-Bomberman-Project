@@ -3,6 +3,7 @@ import
    GUI
    Input
    PlayerManager
+   BombManager
 
    System(show:Show)
    Browser(browse:Browse)
@@ -12,6 +13,7 @@ define
    Board
    Bombers
    PortBombers
+   Bombs
 
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
       % TODO
@@ -23,7 +25,7 @@ define
    end
    SpawnLocations
 
-   TurnByTurnGameSpeed = 2000 % msec between each turn
+   TurnByTurnGameSpeed = 1000 % msec between each turn
 
 in
 
@@ -32,6 +34,8 @@ in
 
    Bombers = {MakeTuple '#' Input.nbBombers}
    PortBombers = {MakeTuple '#' Input.nbBombers}
+
+   Bombs = {BombManager.initialize Board}
 
    % initialise bombers
    for I in 1..Input.nbBombers do
@@ -44,7 +48,7 @@ in
       {Send Board initPlayer(Bombers.I)}
    end
 
-   {Delay 500} % wait for board do be displayed properly
+   {Delay 5000} % wait for board do be displayed properly
 
    % spawn players
    SpawnLocations = {FindSpawnLocations}
@@ -55,25 +59,40 @@ in
       {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
    end
 
-   for N in 1..10 do % do 10 turns
-      {Delay TurnByTurnGameSpeed}
+   if Input.isTurnByTurn then
 
-      for I in 1..Input.nbBombers do % for every player
-         ID Action
-      in
-         {Send PortBombers.I doaction(ID Action)}
-         case Action
-         of move(Pos) then 
-            {Send Board movePlayer(Bombers.I Pos)}
-         [] bomb(Pos) then 
-            {Send Board spawnBomb(Pos)}
-         [] null then 
-            {Show 'ACTION null on turn '#N}
-         else {Show 'ERROR : UNKNOWN ACTION'}
+   %%%%%%%%%%%%%%%%%%% TURN BY TURN %%%%%%%%%%%%%%%%%%%
+      for N in 1..100 do % do 100 turns
+         {Send Bombs makeExplode} % make every bomb with timer at 0 explode
+
+         {Delay TurnByTurnGameSpeed}
+
+         for I in 1..Input.nbBombers do % for every player
+            ID Action
+         in
+            {Send PortBombers.I doaction(ID Action)}
+            case Action
+            of move(Pos) then 
+               {Send Board movePlayer(Bombers.I Pos)}
+            [] bomb(Pos) then 
+               {Send Bombs placeBomb(PortBombers.I Pos)}
+            [] null then 
+               {Show 'ACTION null on turn '#N}
+            else {Show 'ERROR : UNKNOWN ACTION'}
+            end
          end
+
+         {Send Bombs nextTurn} % decrease bomb's timers
+         {Browse N}
       end
 
-      {Browse N}
+   else 
+   %%%%%%%%%%%%%%%%%%% SIMULTANEOUS %%%%%%%%%%%%%%%%%%%
+
+      skip
+      % TODO
    end
+
+   % TODO : quit game properly
 
 end

@@ -31,26 +31,33 @@ in
    
    IsTurnByTurn = true
    UseExtention = false
-   PrintOK = true
+   PrintOK = false
 
 
 %%%% Description of the map %%%%
    
    NbRow = 7
    NbColumn = 13
-   Map = [[1 1 1 1 1 1 1 1 1 1 1 1 1]
-          [1 4 0 2 2 2 2 2 2 2 0 4 1]
-	       [1 0 1 3 1 2 1 2 1 2 1 0 1]
-	       [1 2 2 2 3 2 2 2 2 3 2 2 1]
-	       [1 0 1 2 1 2 1 3 1 2 1 0 1]
-	       [1 4 0 2 2 2 2 2 2 2 0 4 1]
-	       [1 1 1 1 1 1 1 1 1 1 1 1 1]]
+   %Map = [[1 1 1 1 1 1 1 1 1 1 1 1 1]
+   %       [1 4 0 2 2 2 2 2 2 2 0 4 1]
+	%       [1 0 1 3 1 2 1 2 1 2 1 0 1]
+	%       [1 2 2 2 3 2 2 2 2 3 2 2 1]
+	%       [1 0 1 2 1 2 1 3 1 2 1 0 1]
+	%       [1 4 0 2 2 2 2 2 2 2 0 4 1]
+	%       [1 1 1 1 1 1 1 1 1 1 1 1 1]]
+   Map =  [[1 1 1 1 1 1 1 1 1 1 1 1 1]
+           [1 4 0 0 0 0 0 0 0 0 0 4 1]
+	        [1 0 1 0 1 0 1 0 1 0 1 0 1]
+	        [1 0 0 0 0 0 0 0 0 0 0 0 1]
+	        [1 0 1 0 1 0 1 3 1 0 1 0 1]
+	        [1 4 0 0 0 0 0 0 0 0 0 4 1]
+           [1 1 1 1 1 1 1 1 1 1 1 1 1]]
 
 %%%% Players description %%%%
 
    NbBombers = 2
    Bombers = [player000bomber player000bomber]
-   ColorBombers = [yellow red]
+   ColorBombers = [blue red]
 
 %%%% Parameters %%%%
 

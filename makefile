@@ -1,10 +1,9 @@
 # ----------------------------
-# group nb ??
-# 59101600 : Brieuc DE VOGHEL
+# group nb : 5
 # 32981600 : Severine MERSCH-MERSCH
+# 59101600 : Brieuc DE VOGHEL
 # ----------------------------
 
-# TODO complete header with group number
 
 all:
 	#@make clean
@@ -15,6 +14,7 @@ all:
 
 compile:
 	@ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
+	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
 	@ozc -c src/GUI.oz -o bin/GUI.ozf
 	@ozc -c src/Main.oz -o bin/Main.ozf
 
@@ -29,10 +29,12 @@ run:
 	@ozengine bin/Main.ozf
 
 main:
+	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
 	@ozc -c src/Main.oz -o bin/Main.ozf
 	@make run
 
 clean:
 	@rm -fv bin/PlayerManager.ozf
+	@rm -fv bin/BombManager.ozf
 	@rm -fv bin/GUI.ozf
 	@rm -fv bin/Main.ozf

@@ -290,10 +290,10 @@ in
 	         {TreatStream T Grid Players}
          [] hideBonus(Pos) then
             {ApplyTo Grid Pos bonus Hide}
-	        {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] spawnPoint(Pos) then
             {ApplyTo Grid Pos point Spawn}
-	        {TreatStream T Grid Players}
+	         {TreatStream T Grid Players}
          [] hidePoint(Pos) then
             {ApplyTo Grid Pos point Hide}
 	         {TreatStream T Grid Players}
