@@ -5,27 +5,65 @@ import
    PlayerManager
    BombManager
 
-   System(show:Show)
+   System(show:Show) % debug only
    Browser(browse:Browse)
-   OS % for Delay
-   Lists
 define
    Board
    Bombers
    PortBombers
    Bombs
 
+   TurnByTurnGameDelay = 1000 % msec between each turn
+   WinnerId
+
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
-      % TODO
-
-      % for given map
       spawnLocations(pt(x:2 y:2) pt(x:12 y:2) pt(x:2 y:6) pt(x:12 y:6)) 
-
+      % TODO : find in function of Input.map
       % TODO : randomize order
    end
    SpawnLocations
 
-   TurnByTurnGameSpeed = 1000 % msec between each turn
+   fun {ExecuteTurnByTurn TurnNb}
+      {Send Bombs makeExplode} % make every bomb with timer at 0 explode
+
+      {Delay TurnByTurnGameDelay}
+
+      for I in 1..Input.nbBombers do % for every player ...
+         Action
+      in
+         {Send PortBombers.I doaction(_ Action)}
+         case Action
+         of move(Pos) then 
+            {Send Board movePlayer(Bombers.I Pos)}
+            % TODO : notify players
+         [] bomb(Pos) then 
+            {Send Bombs placeBomb(PortBombers.I Pos)}
+         [] null then 
+            {Show 'ACTION null on turn '#TurnNb} % TODO : what now ?
+         end
+      end
+
+      {Send Bombs nextTurn} % decrease bomb's timers
+      {Browse turn#TurnNb}
+
+      % look for winner
+      WinnerId = {PlayersStillAlive}
+      if {Record.width WinnerId} > 1 then
+         {ExecuteTurnByTurn TurnNb+1}
+      else 
+         WinnerId.1
+      end
+   end
+
+   fun {ExecuteSimultaneous}
+      bomber(id:~1 color:red name:none)
+      % TODO
+   end
+
+   fun {PlayersStillAlive}
+      '#'(bomber(id:~1 color:red name:none) bomber(id:~2 color:red name:none))
+      % TODO
+   end
 
 in
 
@@ -48,50 +86,31 @@ in
       {Send Board initPlayer(Bombers.I)}
    end
 
-   {Delay 5000} % wait for board do be displayed properly
-
    % spawn players
    SpawnLocations = {FindSpawnLocations}
-   for I in 1..Input.nbBombers do ID Pos in
+   for I in 1..Input.nbBombers do
       {Send PortBombers.I assignSpawn(SpawnLocations.I)} % only at game initialisation
 
       {Send Board spawnPlayer(Bombers.I SpawnLocations.I)} % tell board to display player
-      {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
+      {Send PortBombers.I spawn(_ _)} % tell player he's alive
    end
 
+   % wait for board do be displayed properly
+   local X Y in
+      thread {Wait 10000} Y=unit end
+      {Send Board bindWhenReady(X)} % binds X (as soon as previous calls are done ~ build is done)
+      {WaitOr X Y}
+   end
+   % ou a default d'avoir la liberte de faire de belles choses ... :
+   {Delay 7000} {Browse 5} {Delay 1000} {Browse 4} {Delay 1000} {Browse 3} {Delay 1000} {Browse 2} {Delay 1000} {Browse 1} {Delay 1000} {Browse 'GO'}
+
+   % run players
    if Input.isTurnByTurn then
-
-   %%%%%%%%%%%%%%%%%%% TURN BY TURN %%%%%%%%%%%%%%%%%%%
-      for N in 1..100 do % do 100 turns
-         {Send Bombs makeExplode} % make every bomb with timer at 0 explode
-
-         {Delay TurnByTurnGameSpeed}
-
-         for I in 1..Input.nbBombers do % for every player
-            ID Action
-         in
-            {Send PortBombers.I doaction(ID Action)}
-            case Action
-            of move(Pos) then 
-               {Send Board movePlayer(Bombers.I Pos)}
-            [] bomb(Pos) then 
-               {Send Bombs placeBomb(PortBombers.I Pos)}
-            [] null then 
-               {Show 'ACTION null on turn '#N}
-            else {Show 'ERROR : UNKNOWN ACTION'}
-            end
-         end
-
-         {Send Bombs nextTurn} % decrease bomb's timers
-         {Browse N}
-      end
-
+      WinnerId = {ExecuteTurnByTurn 0}
    else 
-   %%%%%%%%%%%%%%%%%%% SIMULTANEOUS %%%%%%%%%%%%%%%%%%%
-
-      skip
-      % TODO
+      WinnerId = {ExecuteSimultaneous}
    end
+   {Send Board displayWinner(WinnerId)}
 
    % TODO : quit game properly
 

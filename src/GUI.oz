@@ -267,6 +267,9 @@ in
          of buildWindow then NewGrid in 
             NewGrid = {BuildWindow}
             {TreatStream T NewGrid {Tuple.make players Input.nbBombers}}
+         [] bindWhenReady(X) then % TODO : unsupported by Projet2019util.ozf (filtered)
+            X = unit
+            {TreatStream T Grid Players}
          [] initPlayer(ID) then
             Players.(ID.id) = {InitPlayer Grid ID}
             {TreatStream T Grid Players}
