@@ -16,6 +16,8 @@ compile:
 	@make -s GUI.ozf
 	@make -s PlayerManager.ozf
 	@make -s BombManager.ozf
+	@make -s NotificationManager.ozf
+	@make -s MapManager.ozf
 	@make -s Main.ozf
 
 compilePlayers:
@@ -32,12 +34,16 @@ run:
 
 main:
 	@make -s BombManager.ozf
+	@make -s NotificationManager.ozf
+	@make -s MapManager.ozf
 	@make -s Main.ozf
 	@make -s run
 
 clean:
 	@rm -fv bin/PlayerManager.ozf
 	@rm -fv bin/BombManager.ozf
+	@rm -fv bin/NotificationManager.ozf
+	@rm -fv bin/MapManager.ozf
 	@rm -fv bin/GUI.ozf
 	@rm -fv bin/Main.ozf
 	@rm -fv bin/Input.ozf
@@ -52,6 +58,12 @@ PlayerManager.ozf:
 BombManager.ozf:
 	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
 	@echo '=> BombManager compiled'
+NotificationManager.ozf:
+	@ozc -c src/NotificationManager.oz -o bin/NotificationManager.ozf
+	@echo '=> NotificationManager compiled'
+MapManager.ozf:
+	@ozc -c src/MapManager.oz -o bin/MapManager.ozf
+	@echo '=> MapManager compiled'
 Input.ozf:
 	@ozc -c src/Input.oz -o bin/Input.ozf
 	@echo '=> Input compiled'

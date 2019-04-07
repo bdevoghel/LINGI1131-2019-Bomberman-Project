@@ -34,7 +34,7 @@ define
 
    WaitForStart
 
-   BoomIMG = {QTk.newImage photo(url:'src/ressources/explosion.png' height:0 width:0)}
+   %BoomIMG = {QTk.newImage photo(url:'src/ressources/explosion.png' height:0 width:0)}
 
 in
 

@@ -1,7 +1,6 @@
 functor
 import
     Input
-    System(show:Show)
 export
     initialize:StartManager
 define
@@ -9,9 +8,12 @@ define
     StartManager
     TreatStream
 
+    Gui
     Players
+    NotificationM
+    MapM
 
-    proc {ExplodeBomb Gui Pos Fire}
+    proc {ExplodeBomb Pos Fire}
         PositionsToUpdate
     in
         {Send Gui hideBomb(Pos)}
@@ -21,14 +23,16 @@ define
         end
     end
 
-    proc {DissipateExplosion Gui Pos Fire}
+    proc {DissipateExplosion Pos Fire}
         PositionsToUpdate
     in
         PositionsToUpdate = {GetPositionsToUpdate Pos Fire}
-        for I in 1..{Record.width PositionsToUpdate} do
-            MapValue = {List.nth {List.nth Input.map PositionsToUpdate.I.y} PositionsToUpdate.I.x}
+        for I in 1..{Record.width PositionsToUpdate} do 
+            MapValue
         in
             {Send Gui hideFire(PositionsToUpdate.I)}
+
+            {Send MapM getMapValue(PositionsToUpdate.I.x PositionsToUpdate.I.y MapValue)}
             if MapValue == 2 orelse MapValue == 3 then % box
                 {Send Gui hideBox(PositionsToUpdate.I)}
                 if MapValue == 2 then % box with point
@@ -36,13 +40,7 @@ define
                 elseif MapValue == 3 then % box with bonus
                     {Send Gui spawnBonus(PositionsToUpdate.I)}
                 end
-
-                % notify players
-                for P in 1..{Record.width Players} do
-                    skip
-                    %{Send Players.P info(boxRemoved(PositionsToUpdate.I))}
-                end
-                {Show 'DID NOT NOTIFY PLAYER : boxRemoved(Pos)'}
+                {Send NotificationM boxRemoved(PositionsToUpdate.I)} % notify everyone
             end
         end
     end
@@ -76,8 +74,9 @@ define
             end
         end
         fun {ValidFlamePosition NewPos ?ToBeContinued}
-            MapValue = {List.nth {List.nth Input.map NewPos.y} NewPos.x}
+            MapValue
         in
+            {Send MapM getMapValue(NewPos.x NewPos.y MapValue)}
             if MapValue == 1 then % wall
                 ToBeContinued = false
                 false
@@ -99,60 +98,58 @@ define
 
 in
 
-    fun{StartManager Gui PortBombers}
+    fun {StartManager GuiPort PortBombers NotificationManagerPort MapManagerPort}
         Stream
         Port
     in
         {NewPort Stream Port}
         thread
-	        {TreatStream Stream Gui 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:god))}
+	        {TreatStream Stream 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:god))}
         end
+        Gui = GuiPort
         Players = PortBombers
+        NotificationM = NotificationManagerPort
+        MapM = MapManagerPort
         Port
     end
         
-    proc{TreatStream Stream Gui Bombs}
-        case Stream
-        of nil then skip
+    proc {TreatStream Stream Bombs}
+        case Stream of nil then skip
         [] H|T then
-            case H 
-            of plantBomb(Owner Pos) then NewBombs in
+            case H of nil then skip
+            [] plantBomb(Owner Pos) then NewBombs in
                 {Send Gui spawnBomb(Pos)}
                 NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:Owner)) Bombs}
-                {TreatStream T Gui NewBombs}
+                {TreatStream T NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
                         if Timer == 0 then
-                            {ExplodeBomb Gui Pos Fire}
+                            {ExplodeBomb Pos Fire}
                             {Send Owner add(bomb 1 _)}
-
-                            % notify players
-                            for P in 1..{Record.width Players} do
-                                {Send Players.P info(bombExploded(Pos))}
-                            end
+                            {Send NotificationM bombExploded(Pos)} % notify everyone
                         end
                     end
                 end
-                {TreatStream T Gui Bombs}
+                {TreatStream T Bombs}
             [] nextTurn then NewBombs = {Cell.new bombs()} in
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
                         if Timer == 0 then
-                            {DissipateExplosion Gui Pos Fire}
+                            {DissipateExplosion Pos Fire}
                         else 
                             NewBombs := {Tuple.append 'newBomb'('#'(pos:Pos timer:Timer-1 fire:Fire owner:Owner)) @NewBombs}
                         end
                     end
                 end                
-                {TreatStream T Gui @NewBombs}
+                {TreatStream T @NewBombs}
             else
                 % WARNING : unsupported message
-                {TreatStream T Gui Bombs}
+                {TreatStream T Bombs}
             end
         end
     end
