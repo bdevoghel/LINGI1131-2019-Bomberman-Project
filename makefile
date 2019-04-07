@@ -14,19 +14,25 @@ all:
 
 compile:
 	@ozc -c src/GUI.oz -o bin/GUI.ozf
+	@echo '=> GUI compiled'
 	@ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
 	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
+	@echo '=> Managers compiled'
 	@ozc -c src/Main.oz -o bin/Main.ozf
+	@echo '=> Main compiled'
 
 compilePlayers:
 	#@ozc -c src/Player000name.oz -o bin/Player000name.ozf
 	# + others
+	@echo '=> Players compiled'
 
 compileInput:
 	@ozc -c src/Input.oz -o bin/Input.ozf
+	@echo '=> Input compiled'
 
 run:
 	#@echo '*****************************************************************'
+	@echo '=> Running Main'
 	@ozengine bin/Main.ozf
 
 main:

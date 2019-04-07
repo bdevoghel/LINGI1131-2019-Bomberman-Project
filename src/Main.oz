@@ -73,7 +73,7 @@ in
    Bombers = {MakeTuple '#' Input.nbBombers}
    PortBombers = {MakeTuple '#' Input.nbBombers}
 
-   Bombs = {BombManager.initialize Board}
+   Bombs = {BombManager.initialize Board PortBombers}
 
    % initialise bombers
    for I in 1..Input.nbBombers do

@@ -1,14 +1,15 @@
 functor
 import
     Input
-
-    Browser(browse:Browse)
+    System(show:Show)
 export
     initialize:StartManager
 define
    
     StartManager
     TreatStream
+
+    Players
 
     proc {ExplodeBomb Gui Pos Fire}
         PositionsToUpdate
@@ -25,30 +26,80 @@ define
     in
         PositionsToUpdate = {GetPositionsToUpdate Pos Fire}
         for I in 1..{Record.width PositionsToUpdate} do
+            MapValue = {List.nth {List.nth Input.map PositionsToUpdate.I.y} PositionsToUpdate.I.x}
+        in
             {Send Gui hideFire(PositionsToUpdate.I)}
+            if MapValue == 2 orelse MapValue == 3 then % box
+                {Send Gui hideBox(PositionsToUpdate.I)}
+                if MapValue == 2 then % box with point
+                    {Send Gui spawnPoint(PositionsToUpdate.I)}
+                elseif MapValue == 3 then % box with bonus
+                    {Send Gui spawnBonus(PositionsToUpdate.I)}
+                end
+
+                % notify players
+                for I in 1..{Record.width Players} do
+                    {Show Players.I} {Show info(boxRemoved(PositionsToUpdate.I))}
+                    %{Send Players.I info(boxRemoved(PositionsToUpdate.I))}
+                    % TODO : debug
+                end
+            end
         end
     end
 
     fun {GetPositionsToUpdate Pos Fire}
         Positions = {Cell.new pos(Pos)}
-    in
-        %%%%%%%%%%%%%%%%%%%%%%%%%%% WROK IN PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%
-        for X in 1..Input.nbRow do
-            for Y in 1..Input.nbColumn do
-                if (Pos.x == X andthen {Number.abs Pos.y-Y} < Fire) 
-                    orelse (Pos.y == Y andthen {Number.abs Pos.x-X} < Fire) then % in cardinal directions at [Fire] distance from [Pos]
-                    Positions := {Tuple.append 'newPos'('pt'(x:X y:Y)) @Positions}
+        proc {Propagate Dir Pos Fire}
+            if Fire > 0 then
+                case Dir
+                of north then NewPos = 'pt'(x:Pos.x y:Pos.y-1) ToBeContinued in
+                    if {ValidFlamePosition NewPos ToBeContinued} then
+                        Positions := {Tuple.append '#'(NewPos) @Positions}
+                    end
+                    if ToBeContinued then {Propagate north NewPos Fire-1} end
+                [] east then NewPos = 'pt'(x:Pos.x+1 y:Pos.y) ToBeContinued in
+                    if {ValidFlamePosition NewPos ToBeContinued} then
+                        Positions := {Tuple.append '#'(NewPos) @Positions}
+                    end
+                    if ToBeContinued then {Propagate east NewPos Fire-1} end
+                [] south then NewPos = 'pt'(x:Pos.x y:Pos.y+1) ToBeContinued in
+                    if {ValidFlamePosition NewPos ToBeContinued} then
+                        Positions := {Tuple.append '#'(NewPos) @Positions}
+                    end
+                    if ToBeContinued then {Propagate south NewPos Fire-1} end
+                [] west then NewPos = 'pt'(x:Pos.x-1 y:Pos.y) ToBeContinued in
+                    if {ValidFlamePosition NewPos ToBeContinued} then
+                        Positions := {Tuple.append '#'(NewPos) @Positions}
+                    end
+                    if ToBeContinued then {Propagate west NewPos Fire-1} end
                 end
             end
         end
-        %@Positions
-        %%%%%%%%%%%%%%%%%%%%%%%%%%% WROK IN PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%
-        pos(Pos)
+        fun {ValidFlamePosition NewPos ?ToBeContinued}
+            MapValue = {List.nth {List.nth Input.map NewPos.y} NewPos.x}
+        in
+            if MapValue == 1 then % wall
+                ToBeContinued = false
+                false
+            elseif MapValue == 2 orelse MapValue == 3 then % box
+                ToBeContinued = false
+                true
+            else 
+                ToBeContinued = true
+                true
+            end
+        end
+    in
+        {Propagate north Pos Fire-1}
+        {Propagate east Pos Fire-1}
+        {Propagate south Pos Fire-1}
+        {Propagate west Pos Fire-1}
+        @Positions
     end
 
 in
 
-    fun{StartManager Gui}
+    fun{StartManager Gui PortBombers}
         Stream
         Port
     in
@@ -56,6 +107,7 @@ in
         thread
 	        {TreatStream Stream Gui 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:god))}
         end
+        Players = PortBombers
         Port
     end
         
@@ -65,9 +117,9 @@ in
         [] H|T then
             case H 
             of placeBomb(Owner Pos) then NewBombs in
-                {Send Gui spawnBomb(Pos)} % display bomb
+                {Send Gui spawnBomb(Pos)}
                 NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:Owner)) Bombs}
-                % TODO : notify players
+                % TODO : notify players bombPlanted
                 {TreatStream T Gui NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
@@ -76,7 +128,7 @@ in
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
                         if Timer == 0 then
                             {ExplodeBomb Gui Pos Fire}
-                            % TODO : notify players
+                            % TODO : notify players bombExploded
                             {Send Owner add(bomb 1 _)}
                         end
                     end
@@ -96,7 +148,7 @@ in
                 end                
                 {TreatStream T Gui @NewBombs}
             else
-                {Browse 'Unsupported message'#H}
+                % WARNING : unsupported message
                 {TreatStream T Gui Bombs}
             end
         end
