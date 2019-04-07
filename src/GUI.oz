@@ -6,6 +6,7 @@ import
    Projet2019util
 export
    portWindow:StartWindow
+   waitForStart:WaitForStart
 define
    
    StartWindow
@@ -31,13 +32,17 @@ define
 
    StateModification
 
+   WaitForStart
+
+   BoomIMG = {QTk.newImage photo(url:'src/ressources/explosion.png' height:0 width:0)}
+
 in
 
 %%%%% Build the initial window and set it up (call only once)
    fun{BuildWindow}
       Grid GridLife GridScore Toolbar Desc DescLife DescScore Window GridItems
    in
-      Toolbar=lr(glue:we tbbutton(text:"Quit" glue:w action:toplevel#close))
+      Toolbar=lr(glue:we tbbutton(text:"Quit" glue:w action:toplevel#close) tbbutton(text:"Start" glue:w action:proc{$} WaitForStart=unit end))
       Desc=grid(handle:Grid height:50*Input.nbRow width:50*Input.nbColumn)
       DescLife=grid(handle:GridLife height:100 width:50*Input.nbBombers)
       DescScore=grid(handle:GridScore height:100 width:50*Input.nbBombers)
@@ -78,18 +83,19 @@ in
 
    
 %%%%% Squares of path and wall
-   Squares = square(0:label(text:"" width:1 height:1 bg:c(0 0 204))
-		    1:label(text:"" borderwidth:5 relief:raised width:1 height:1 bg:c(0 0 0))
-		    2:label(text:"" width:1 height:1 bg:c(0 0 204))
-		    3:label(text:"" width:1 height:1 bg:c(0 0 204))
-		    4:label(text:"" width:1 height:1 bg:c(0 150 150))
+   Squares = square(0:label(text:"" width:1 height:1 bg:c(215 204 200))
+		    1:label(text:"" borderwidth:3 relief:raised width:1 height:1 bg:c(52 52 52))
+		    2:label(text:"" width:1 height:1 bg:c(215 204 200))
+		    3:label(text:"" width:1 height:1 bg:c(215 204 200))
+		    4:label(text:"" width:1 height:1 bg:c(141 110 99))
 		   )
-   Items = items(boxpoint:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:3 height:2 bg:c(139 69 19) handle:Handle) end 
-		 boxbonus:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:3 height:2 bg:c(210 105 30) handle:Handle) end 
-		 point:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:white) end 
+   Items = items(boxpoint:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(139 69 19) handle:Handle) end 
+		 boxbonus:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(210 105 30) handle:Handle) end 
+		 point:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:yellow) end 
 		 bonus:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:green) end 
-		 bomb:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:black) end 
-		 fire:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:red) end 
+		 bomb:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:black) end
+       fire:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:red) end 
+		 %fire:fun{$ Handle} label(image:BoomIMG height:40 width:40 handle:Handle) end 
 		)
    
 
@@ -179,8 +185,8 @@ in
    in
       bomber(id:Id color:Color name:_) = ID
       LabelPlayer = label(text:"P" handle:Handle borderwidth:5 relief:raised bg:Color ipadx:5 ipady:5)
-      LabelLife = label(text:Input.nbLives borderwidth:5 handle:HandleLife relief:solid bg:Color ipadx:5 ipady:5)
-      LabelScore = label(text:0 borderwidth:5 handle:HandleScore relief:solid bg:Color ipadx:5 ipady:5)
+      LabelLife = label(text:Input.nbLives borderwidth:2 handle:HandleLife relief:raised bg:Color ipadx:5 ipady:5)
+      LabelScore = label(text:0 borderwidth:2 handle:HandleScore relief:raised bg:Color ipadx:5 ipady:5)
       {Grid.grid configure(LabelPlayer row:0 column:0 sticky:wesn)}
       {Grid.grid remove(Handle)}
       {Grid.life configure(LabelLife row:1 column:Id+1 sticky:wesn)}
@@ -267,9 +273,6 @@ in
          of buildWindow then NewGrid in 
             NewGrid = {BuildWindow}
             {TreatStream T NewGrid {Tuple.make players Input.nbBombers}}
-         [] bindWhenReady(X) then % TODO : unsupported by Projet2019util.ozf (filtered)
-            X = unit
-            {TreatStream T Grid Players}
          [] initPlayer(ID) then
             Players.(ID.id) = {InitPlayer Grid ID}
             {TreatStream T Grid Players}

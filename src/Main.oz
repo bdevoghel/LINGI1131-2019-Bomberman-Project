@@ -35,9 +35,18 @@ define
          case Action
          of move(Pos) then 
             {Send Board movePlayer(Bombers.I Pos)}
-            % TODO : notify players
+
+            % notify players
+            for P in 1..{Record.width PortBombers} do
+               {Send PortBombers.P info(movePlayer(Bombers.I Pos))}
+            end
          [] bomb(Pos) then 
-            {Send Bombs placeBomb(PortBombers.I Pos)}
+            {Send Bombs plantBomb(PortBombers.I Pos)}
+
+            % notify players
+            for P in 1..{Record.width PortBombers} do
+               {Send PortBombers.P info(bombPlanted(Pos))}
+            end
          [] null then 
             {Show 'ACTION null on turn '#TurnNb} % TODO : what now ?
          end
@@ -93,16 +102,15 @@ in
 
       {Send Board spawnPlayer(Bombers.I SpawnLocations.I)} % tell board to display player
       {Send PortBombers.I spawn(_ _)} % tell player he's alive
+
+      % notify players
+      for P in 1..{Record.width PortBombers} do
+         {Send PortBombers.P info(spawnPlayer(Bombers.I SpawnLocations.I))}
+      end
    end
 
-   % wait for board do be displayed properly
-   local X Y in
-      thread {Wait 10000} Y=unit end
-      {Send Board bindWhenReady(X)} % binds X (as soon as previous calls are done ~ build is done)
-      {WaitOr X Y}
-   end
-   % ou a default d'avoir la liberte de faire de belles choses ... :
-   {Delay 7000} {Browse 5} {Delay 1000} {Browse 4} {Delay 1000} {Browse 3} {Delay 1000} {Browse 2} {Delay 1000} {Browse 1} {Delay 1000} {Browse 'GO'}
+   % wait for click on 'start' botton
+   {Wait GUI.waitForStart}
 
    % run players
    if Input.isTurnByTurn then

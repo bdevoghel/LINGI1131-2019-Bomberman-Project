@@ -38,11 +38,11 @@ define
                 end
 
                 % notify players
-                for I in 1..{Record.width Players} do
-                    {Show Players.I} {Show info(boxRemoved(PositionsToUpdate.I))}
-                    %{Send Players.I info(boxRemoved(PositionsToUpdate.I))}
-                    % TODO : debug
+                for P in 1..{Record.width Players} do
+                    skip
+                    %{Send Players.P info(boxRemoved(PositionsToUpdate.I))}
                 end
+                {Show 'DID NOT NOTIFY PLAYER : boxRemoved(Pos)'}
             end
         end
     end
@@ -116,10 +116,9 @@ in
         of nil then skip
         [] H|T then
             case H 
-            of placeBomb(Owner Pos) then NewBombs in
+            of plantBomb(Owner Pos) then NewBombs in
                 {Send Gui spawnBomb(Pos)}
                 NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:Owner)) Bombs}
-                % TODO : notify players bombPlanted
                 {TreatStream T Gui NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
@@ -128,8 +127,12 @@ in
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
                         if Timer == 0 then
                             {ExplodeBomb Gui Pos Fire}
-                            % TODO : notify players bombExploded
                             {Send Owner add(bomb 1 _)}
+
+                            % notify players
+                            for P in 1..{Record.width Players} do
+                                {Send Players.P info(bombExploded(Pos))}
+                            end
                         end
                     end
                 end

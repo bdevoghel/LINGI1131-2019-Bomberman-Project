@@ -13,31 +13,26 @@ all:
 	@make -s run
 
 compile:
-	@ozc -c src/GUI.oz -o bin/GUI.ozf
-	@echo '=> GUI compiled'
-	@ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
-	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
-	@echo '=> Managers compiled'
-	@ozc -c src/Main.oz -o bin/Main.ozf
-	@echo '=> Main compiled'
+	@make -s GUI.ozf
+	@make -s PlayerManager.ozf
+	@make -s BombManager.ozf
+	@make -s Main.ozf
 
 compilePlayers:
-	#@ozc -c src/Player000name.oz -o bin/Player000name.ozf
+	@make -s Player000name.ozf
 	# + others
 	@echo '=> Players compiled'
 
 compileInput:
-	@ozc -c src/Input.oz -o bin/Input.ozf
-	@echo '=> Input compiled'
+	@make -s Input.ozf
 
 run:
-	#@echo '*****************************************************************'
 	@echo '=> Running Main'
 	@ozengine bin/Main.ozf
 
 main:
-	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
-	@ozc -c src/Main.oz -o bin/Main.ozf
+	@make -s BombManager.ozf
+	@make -s Main.ozf
 	@make -s run
 
 clean:
@@ -48,6 +43,20 @@ clean:
 	@rm -fv bin/Input.ozf
 	@rm -fv bin/Player000name.ozf
 
-*.ozf:
-	@echo 'I would like to help you, but...'
-	# TODO
+GUI.ozf:
+	@ozc -c src/GUI.oz -o bin/GUI.ozf
+	@echo '=> GUI compiled'
+PlayerManager.ozf:
+	@ozc -c src/PlayerManager.oz -o bin/PlayerManager.ozf
+	@echo '=> PlayerManager compiled'
+BombManager.ozf:
+	@ozc -c src/BombManager.oz -o bin/BombManager.ozf
+	@echo '=> BombManager compiled'
+Input.ozf:
+	@ozc -c src/Input.oz -o bin/Input.ozf
+	@echo '=> Input compiled'
+Main.ozf:
+	@ozc -c src/Main.oz -o bin/Main.ozf
+	@echo '=> Main compiled'
+Player000name.ozf:
+	@ozc -c src/Player000name.oz -o bin/Player000name.ozf
