@@ -3,6 +3,7 @@ import
     Input
 export
     initialize:StartManager
+    getPosExplosions:GetPositionsToUpdate
 define
    
     StartManager
@@ -17,7 +18,7 @@ define
         PositionsToUpdate
     in
         {Send Gui hideBomb(Pos)}
-        PositionsToUpdate = {GetPositionsToUpdate Pos Fire}
+        PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
         for I in 1..{Record.width PositionsToUpdate} do
             {Send Gui spawnFire(PositionsToUpdate.I)}
         end
@@ -26,7 +27,7 @@ define
     proc {DissipateExplosion Pos Fire}
         PositionsToUpdate
     in
-        PositionsToUpdate = {GetPositionsToUpdate Pos Fire}
+        PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
         for I in 1..{Record.width PositionsToUpdate} do 
             MapValue
         in
@@ -45,7 +46,7 @@ define
         end
     end
 
-    fun {GetPositionsToUpdate Pos Fire}
+    fun {GetPositionsToUpdate Pos Fire ValidFlamePosition} % ValidFlamePosition is for higher order programming
         Positions = {Cell.new pos(Pos)}
         proc {Propagate Dir Pos Fire}
             if Fire > 0 then
@@ -73,27 +74,28 @@ define
                 end
             end
         end
-        fun {ValidFlamePosition NewPos ?ToBeContinued}
-            MapValue
-        in
-            {Send MapM getMapValue(NewPos.x NewPos.y MapValue)}
-            if MapValue == 1 then % wall
-                ToBeContinued = false
-                false
-            elseif MapValue == 2 orelse MapValue == 3 then % box
-                ToBeContinued = false
-                true
-            else 
-                ToBeContinued = true
-                true
-            end
-        end
     in
         {Propagate north Pos Fire-1}
         {Propagate east Pos Fire-1}
         {Propagate south Pos Fire-1}
         {Propagate west Pos Fire-1}
         @Positions
+    end
+
+    fun {ValidFlamePosition NewPos ?ToBeContinued}
+        MapValue
+    in
+        {Send MapM getMapValue(NewPos.x NewPos.y MapValue)}
+        if MapValue == 1 then % wall
+            ToBeContinued = false
+            false
+        elseif MapValue == 2 orelse MapValue == 3 then % box
+            ToBeContinued = false
+            true
+        else 
+            ToBeContinued = true
+            true
+        end
     end
 
 in
@@ -104,7 +106,7 @@ in
     in
         {NewPort Stream Port}
         thread
-	        {TreatStream Stream 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:god))}
+	        {TreatStream Stream 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:'GOD'))}
         end
         Gui = GuiPort
         Players = PortBombers

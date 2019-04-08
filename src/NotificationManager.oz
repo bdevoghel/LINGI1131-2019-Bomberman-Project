@@ -52,9 +52,11 @@ in
                 {TreatStream T}
             [] bombExploded(Pos) then
                 {SendInfoToPlayers bombExploded(Pos)}
+                {Send MapM bombExploded(Pos)}
                 {TreatStream T}
             [] boxRemoved(Pos) then
-                {Show 'DID NOT NOTIFY PLAYERS : boxRemoved(Pos)'} % {SendInfoToPlayers boxRemoved(Pos)}
+                {Show 'DID NOTIFY PLAYERS : boxRemoved(Pos)'}
+                {SendInfoToPlayers boxRemoved(Pos)}
                 {Send MapM boxRemoved(Pos)}
                 {TreatStream T}
             else

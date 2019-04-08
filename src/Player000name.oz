@@ -1,7 +1,7 @@
 functor
 import
-   Input
-   Browser
+   %Input
+   %Browser
    Projet2019util
 export
    portPlayer:StartPlayer

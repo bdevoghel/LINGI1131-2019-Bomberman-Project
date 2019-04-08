@@ -18,8 +18,7 @@ define
    NotificationM
    MapM
 
-   TurnByTurnGameDelay = 1000 % msec between each turn
-   WinnerId
+   TurnByTurnGameDelay = 2000 % msec between each turn
    SpawnLocations
 
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
@@ -35,31 +34,48 @@ define
       {Delay TurnByTurnGameDelay}
 
       % for every player ...
-      for I in 1..Input.nbBombers do
-         Action
-      in
-         {Send PortBombers.I doaction(_ Action)}
-         case Action
-         of move(Pos) then 
-            {Send Board movePlayer(Bombers.I Pos)}
-            {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
-         [] bomb(Pos) then 
-            {Send BombM plantBomb(PortBombers.I Pos)}
-            {Send NotificationM bombPlanted(Pos)} % notify everyone
-         [] null then 
-            {Show 'Action null on turn '#TurnNb}
-            % TODO : what now ?
+      for I in 1..Input.nbBombers do State in
+         {Send PortBombers.I getState(_ State)}
+         if State == on then Action in
+            % execute action for player
+            {Send PortBombers.I doaction(_ Action)}
+            case Action
+            of move(Pos) then 
+               {Send Board movePlayer(Bombers.I Pos)}
+               {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
+            [] bomb(Pos) then 
+               {Send BombM plantBomb(PortBombers.I Pos)}
+               {Send NotificationM bombPlanted(Pos)} % notify everyone
+            [] null then 
+               {Show 'Action null on turn '#TurnNb}
+               % TODO : what now ?
+            end
+         else NbLives ID Pos in
+            {Send MapM getPlayerLives(Bombers.I NbLives)}
+            if NbLives > 0 then
+               % spawn player back if it has still lives left
+               {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
+               {Wait ID}
+               if ID \= null then
+                  {Send Board spawnPlayer(ID Pos)} % tell board to display player
+                  {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
+               else
+                  skip
+               end
+            end
          end
       end
 
       {Send BombM nextTurn} % decrease all bomb's timers
 
       % look for winner
-      WinnerId = {PlayersStillAlive}
-      if {Record.width WinnerId} > 1 then
-         {ExecuteTurnByTurn TurnNb+1}
-      else 
-         WinnerId.1
+      local WinnerId in
+         WinnerId = {PlayersStillAlive}
+         if {Record.width WinnerId} > 1 then
+            {ExecuteTurnByTurn TurnNb+1}
+         else 
+            WinnerId.1
+         end
       end
    end
 
@@ -68,9 +84,9 @@ define
       % TODO
    end
 
-   fun {PlayersStillAlive} % returns a tuple containing <bomber>s which have <life> > 0
-      '#'(bomber(id:~1 color:red name:none) bomber(id:~2 color:red name:none))
-      % TODO
+   fun {PlayersStillAlive} PlayersAlive in % returns a tuple containing <bomber>s which have <life> > 0
+      {Send MapM getPlayersAlive(PlayersAlive)}
+      PlayersAlive
    end
 
 in
@@ -83,7 +99,7 @@ in
 
    BombM = {BombManager.initialize Board PortBombers NotificationM MapM}
    NotificationM = {NotificationManager.initialize Board PortBombers MapM}
-   MapM = {MapManager.initialize}
+   MapM = {MapManager.initialize Board PortBombers NotificationM}
 
    % initialize bombers
    for I in 1..Input.nbBombers do
@@ -98,23 +114,27 @@ in
 
    % spawn players
    SpawnLocations = {FindSpawnLocations}
-   for I in 1..Input.nbBombers do
+   for I in 1..Input.nbBombers do ID Pos in
       {Send PortBombers.I assignSpawn(SpawnLocations.I)} % only at game initialisation
-      {Send Board spawnPlayer(Bombers.I SpawnLocations.I)} % tell board to display player
-      {Send PortBombers.I spawn(_ _)} % tell player he's alive
-      {Send NotificationM spawnPlayer(Bombers.I SpawnLocations.I)} % notify everyone
+      {Send PortBombers.I spawn(ID Pos)} % tell player he's alive ; Pos == SpawnLocations.I
+      {Wait ID}
+      {Send Board spawnPlayer(ID Pos)} % tell board to display player
+      {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
    end
 
    % wait for click on 'start' button
+   {Browse 'Please press Start button once the game is displayed properly.'}
    {Wait GUI.waitForStart}
 
    % run players
-   if Input.isTurnByTurn then
-      WinnerId = {ExecuteTurnByTurn 0}
-   else 
-      WinnerId = {ExecuteSimultaneous}
+   local WinnerId in
+      if Input.isTurnByTurn then
+         WinnerId = {ExecuteTurnByTurn 0}
+      else 
+         WinnerId = {ExecuteSimultaneous}
+      end
+      {Send Board displayWinner(WinnerId)}
    end
-   {Send Board displayWinner(WinnerId)}
 
    % TODO : quit game properly
 
