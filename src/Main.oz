@@ -10,6 +10,7 @@ import
    System(show:Show) % debug only
    Browser(browse:Browse)
    Application(exit:Exit)
+   OS(rand:Rand)
 define
    Board
    Bombers
@@ -19,13 +20,44 @@ define
    NotificationM
    MapM
 
-   TurnByTurnGameDelay = 2000 % msec between each turn
+   TurnByTurnGameDelay = 1000 % msec between each turn
    SpawnLocations
 
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
-      spawnLocations(pt(x:2 y:2) pt(x:12 y:2) pt(x:2 y:6) pt(x:12 y:6)) 
-      % TODO : find all pt() where Input.map == 4
-      % TODO : randomize order (for not all players begin at the same spot every game)
+      SpawnPos = {Cell.new spawnPos()}
+      N
+      SpawnList
+
+      fun {ValidRandom Max}
+         R = ({Rand} mod Max) + 1
+      in
+         if @((@SpawnPos).R) == null then
+            {ValidRandom Max}
+         else
+            R
+         end
+      end
+   in
+      % find all pt() where Input.map == 4
+      for X in 1..Input.nbColumn do
+         for Y in 1..Input.nbRow do
+            if {List.nth {List.nth Input.map Y} X} == 4 then
+               SpawnPos := {Tuple.append newPos({Cell.new pt(x:X y:Y)}) @SpawnPos}
+            end
+         end
+      end
+
+      % randomize order (for not all players begin at the same spot every game)
+      N = {Record.width @SpawnPos}
+      SpawnList = {MakeTuple '#' N}
+      for I in 1..N do 
+         X = {ValidRandom N} 
+      in
+         SpawnList.I = @((@SpawnPos).X)
+         ((@SpawnPos).X) := null
+      end
+
+      SpawnList
    end
 
    fun {ExecuteTurnByTurn TurnNb}
@@ -48,7 +80,7 @@ define
                {Send BombM plantBomb(PortBombers.I Pos)}
                {Send NotificationM bombPlanted(Pos)} % notify everyone
             [] null then 
-               {Show 'Action null on turn '#TurnNb}
+               {Show 'Action null on turn'#TurnNb#'by Bomber'#Bombers.I}
                % TODO : what now ?
             end
          else NbLives ID Pos in
@@ -74,8 +106,10 @@ define
          WinnerId = {PlayersStillAlive}
          if {Record.width WinnerId} > 1 then
             {ExecuteTurnByTurn TurnNb+1}
-         else 
+         elseif {Record.width WinnerId} == 1 then
             WinnerId.1
+         else
+            none
          end
       end
    end
@@ -126,6 +160,7 @@ in
    end
 
    % wait for click on 'start' button
+   {Delay 2000}
    {Browse 'Please press Start button once the game is displayed properly.'}
    {Wait GUI.waitForStart}
 
