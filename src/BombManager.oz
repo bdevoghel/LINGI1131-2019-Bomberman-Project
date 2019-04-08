@@ -75,10 +75,10 @@ define
             end
         end
     in
-        {Propagate north Pos Fire-1}
-        {Propagate east Pos Fire-1}
-        {Propagate south Pos Fire-1}
-        {Propagate west Pos Fire-1}
+        {Propagate north Pos Fire}
+        {Propagate east Pos Fire}
+        {Propagate south Pos Fire}
+        {Propagate west Pos Fire}
         @Positions
     end
 

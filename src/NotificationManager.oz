@@ -1,6 +1,5 @@
 functor
-import
-    System(show:Show)
+%import
 export
     initialize:StartManager
 define
@@ -55,7 +54,6 @@ in
                 {Send MapM bombExploded(Pos)}
                 {TreatStream T}
             [] boxRemoved(Pos) then
-                {Show 'DID NOTIFY PLAYERS : boxRemoved(Pos)'}
                 {SendInfoToPlayers boxRemoved(Pos)}
                 {Send MapM boxRemoved(Pos)}
                 {TreatStream T}

@@ -9,6 +9,7 @@ import
 
    System(show:Show) % debug only
    Browser(browse:Browse)
+   Application(exit:Exit)
 define
    Board
    Bombers
@@ -90,6 +91,8 @@ define
    end
 
 in
+   % in case Stop button in pressed
+   thread {Wait GUI.waitForStop} {Show 'Successful Exit'} {Exit 0} end
 
    Board = {GUI.portWindow}
    {Send Board buildWindow}
