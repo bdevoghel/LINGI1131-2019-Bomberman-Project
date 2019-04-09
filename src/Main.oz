@@ -107,15 +107,22 @@ define
       %{Send MapM debugMap}
 
       % look for winner
-      local WinnerId in
-         WinnerId = {PlayersStillAlive}
-         if {Record.width WinnerId} > 1 then
-            {ExecuteTurnByTurn TurnNb+1}
-         elseif {Record.width WinnerId} == 1 then
-            WinnerId.1
-         else
-            none
+      if {Record.width {PlayersStillAlive}} > 1 andthen {NbBoxesLeft} > 0 then 
+         {ExecuteTurnByTurn TurnNb+1}
+      else % find winner(s) with the most points
+         Winners = {Cell.new winners(winners:nil score:~1)}
+      in
+         for I in 1..Input.nbBombers do
+            Result in
+            {Send NotificationM add(Bombers.I point 0 Result)}
+            if Result > @(Winners).score then
+               Winners := winners(winners:Bombers.I score:Result)
+            elseif Result == @(Winners).score then
+               Winners := winners(winners:Bombers.I|@(Winners).winners score:Result)
+            else skip
+            end
          end
+         @(Winners).winners
       end
    end
 
@@ -127,6 +134,11 @@ define
    fun {PlayersStillAlive} PlayersAlive in % returns a tuple containing <bomber>s which have <life> > 0
       {Send MapM getPlayersAlive(PlayersAlive)}
       PlayersAlive
+   end
+
+   fun {NbBoxesLeft} NbBoxes in
+      {Send MapM getNbBoxes(NbBoxes)}
+      NbBoxes
    end
 
 in

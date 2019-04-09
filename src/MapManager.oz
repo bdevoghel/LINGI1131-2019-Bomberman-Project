@@ -16,6 +16,8 @@ define
     PosPlayers
     NotificationM
 
+    NbBoxesLeft
+
     proc {DebugMap}
         M = {Cell.new Map} in 
         for Y in 1..Input.nbRow do
@@ -29,10 +31,14 @@ define
     end
 
     proc {InitMap}
+        NbBoxesLeft = {Cell.new 0}
         Map = {List.make Input.nbRow*Input.nbColumn}
         for X in 1..Input.nbColumn do
             for Y in 1..Input.nbRow do
                 {List.nth Map {Index X Y}} = {Cell.new {List.nth {List.nth Input.map Y} X}}
+                if @{List.nth Map {Index X Y}} == 2 orelse @{List.nth Map {Index X Y}} == 3 then
+                    NbBoxesLeft := @NbBoxesLeft + 1
+                end
             end
         end
     end
@@ -145,6 +151,8 @@ in
                 (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
             [] bombExploded(Pos) then
                 {ComputeVictims Pos}
+            [] boxRemoved(_) then
+                NbBoxesLeft := @NbBoxesLeft - 1
             [] getMapValue(X Y ?MapValue) then
                 MapValue = @{List.nth Map {Index X Y}}
             [] getPlayerLives(ID ?NbLives) then
@@ -164,6 +172,8 @@ in
             [] spawnBonus(Pos) then
                 {Send Gui spawnBonus(Pos)}
                 {List.nth Map {Index Pos.x Pos.y}} := 6
+            [] getNbBoxes(?NbBoxes) then
+                NbBoxes = @NbBoxesLeft
             [] debugMap then
                  thread {DebugMap} end
             end

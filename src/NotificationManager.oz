@@ -50,6 +50,7 @@ in
                 {Send MapM bombExploded(Pos)}
             [] boxRemoved(Pos) then
                 {SendToPlayers info(boxRemoved(Pos))}
+                {Send MapM boxRemoved(_)}
             [] spawnPoint(Pos) then
                 {Send MapM spawnPoint(Pos)}
             [] spawnBonus(Pos) then
