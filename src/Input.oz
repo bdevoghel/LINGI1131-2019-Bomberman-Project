@@ -49,14 +49,14 @@ in
            [1 4 0 2 0 0 0 0 2 2 0 4 1]
 	        [1 0 1 0 1 0 1 0 1 0 1 2 1]
 	        [1 3 2 0 0 0 0 0 0 2 3 0 1]
-	        [1 0 1 0 1 0 1 0 1 0 1 0 1]
+	        [1 0 1 0 1 0 1 0 1 0 1 2 1]
 	        [1 4 0 0 0 0 0 0 0 0 0 4 1]
            [1 1 1 1 1 1 1 1 1 1 1 1 1]]
 
 %%%% Players description %%%%
 
    NbBombers = 3
-   Bombers = [player000bomber player000bomber player000bomber]
+   Bombers = [player000bomber player005Umberto player000bomber]
    ColorBombers = [blue red green]
 
 %%%% Parameters %%%%

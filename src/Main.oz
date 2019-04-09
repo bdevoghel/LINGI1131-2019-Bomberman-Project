@@ -99,7 +99,10 @@ define
          end
       end
 
-      {Send BombM nextTurn} % decrease all bomb's timers
+      local GoodToGo in
+      {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
+      {Wait GoodToGo} % wait turn finishes properly
+      end 
 
       % look for winner
       local WinnerId in

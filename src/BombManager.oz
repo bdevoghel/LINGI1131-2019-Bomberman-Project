@@ -52,24 +52,16 @@ define
             if Fire > 0 then
                 case Dir
                 of north then NewPos = 'pt'(x:Pos.x y:Pos.y-1) ToBeContinued in
-                    if {ValidFlamePosition NewPos ToBeContinued} then
-                        Positions := {Tuple.append '#'(NewPos) @Positions}
-                    end
+                    if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate north NewPos Fire-1} end
                 [] east then NewPos = 'pt'(x:Pos.x+1 y:Pos.y) ToBeContinued in
-                    if {ValidFlamePosition NewPos ToBeContinued} then
-                        Positions := {Tuple.append '#'(NewPos) @Positions}
-                    end
+                    if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate east NewPos Fire-1} end
                 [] south then NewPos = 'pt'(x:Pos.x y:Pos.y+1) ToBeContinued in
-                    if {ValidFlamePosition NewPos ToBeContinued} then
-                        Positions := {Tuple.append '#'(NewPos) @Positions}
-                    end
+                    if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate south NewPos Fire-1} end
                 [] west then NewPos = 'pt'(x:Pos.x-1 y:Pos.y) ToBeContinued in
-                    if {ValidFlamePosition NewPos ToBeContinued} then
-                        Positions := {Tuple.append '#'(NewPos) @Positions}
-                    end
+                    if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate west NewPos Fire-1} end
                 end
             end
@@ -136,7 +128,7 @@ in
                     end
                 end
                 {TreatStream T Bombs}
-            [] nextTurn then NewBombs = {Cell.new bombs()} in
+            [] nextTurn(GoodToGo) then NewBombs = {Cell.new bombs()} in % TODO : improve by not remembering the position of the fire ...
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
@@ -144,10 +136,11 @@ in
                         if Timer == 0 then
                             {DissipateExplosion Pos Fire}
                         else 
-                            NewBombs := {Tuple.append 'newBomb'('#'(pos:Pos timer:Timer-1 fire:Fire owner:Owner)) @NewBombs}
+                            NewBombs := {Tuple.append newBomb('#'(pos:Pos timer:Timer-1 fire:Fire owner:Owner)) @NewBombs}
                         end
                     end
-                end                
+                end
+                GoodToGo = unit
                 {TreatStream T @NewBombs}
             else
                 % WARNING : unsupported message

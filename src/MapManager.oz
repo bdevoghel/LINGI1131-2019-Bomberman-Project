@@ -95,12 +95,14 @@ in
         thread
 	        {TreatStream Stream}
         end
+
         Gui = GuiPort
         {InitMap}
-        PosPlayers = {Tuple.make '#' Input.nbBombers}
+        PosPlayers = {Tuple.make '#'() Input.nbBombers}
         {InitPosPlayers PortBombers}
         NotificationM = NotificationManagerPort
-        %thread {DebugMap} end
+        % thread {DebugMap} end
+
         Port
     end
         
@@ -134,7 +136,7 @@ in
                     if @(PosPlayers.I.lives) > 0 then PlayerID in
                         {Send PosPlayers.I.port getId(PlayerID)}
                         {Wait PlayerID}
-                        PlayersNotDead := {Tuple.append 'otherPlayer'(PlayerID) @PlayersNotDead}
+                        PlayersNotDead := {Tuple.append otherPlayer(PlayerID) @PlayersNotDead}
                     end
                 end
                 PlayersAlive = @PlayersNotDead

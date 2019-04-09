@@ -37,6 +37,7 @@ main:
 	@make -s NotificationManager.ozf
 	@make -s MapManager.ozf
 	@make -s Main.ozf
+	@make -s compilePlayers
 	@make -s run
 
 clean:

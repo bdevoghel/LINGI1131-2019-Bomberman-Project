@@ -44,7 +44,7 @@ in
    fun{BuildWindow}
       Grid GridLife GridScore Toolbar Desc DescLife DescScore Window GridItems
    in
-      Toolbar=lr(glue:we tbbutton(text:"Quit" glue:w action:toplevel#close) tbbutton(text:"Start" glue:w action:proc{$} WaitForStart=unit end) tbbutton(text:"Stop" glue:w action:proc{$} WaitForStop=unit end))
+      Toolbar=lr(glue:we tbbutton(text:"Quit" glue:w action:proc{$} WaitForStop=unit end) tbbutton(text:"Start" glue:w action:proc{$} WaitForStart=unit end))
       Desc=grid(handle:Grid height:50*Input.nbRow width:50*Input.nbColumn)
       DescLife=grid(handle:GridLife height:100 width:50*Input.nbBombers)
       DescScore=grid(handle:GridScore height:100 width:50*Input.nbBombers)
