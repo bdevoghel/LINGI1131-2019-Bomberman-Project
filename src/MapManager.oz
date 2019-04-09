@@ -69,6 +69,7 @@ define
                         (PosPlayers.(ID.id).lives) := NewLife
                         {Send Gui hidePlayer(ID)}
                         {Send NotificationM deadPlayer(ID)} % notify everyone
+                        (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
                     else 
                         {Show 'ERROR : result in gotHit(ID Result) == null'}
                     end
@@ -94,14 +95,14 @@ define
 
     proc {ExecuteMove ID Pos} Result in 
         (PosPlayers.(ID.id).pos) := Pos
-        if @{List.nth Map {Index Pos.x Pos.y}} == 5 then % add 1 point
+        if @{List.nth Map {Index Pos.x Pos.y}} == 5 then % walks on point
             {Send Gui hidePoint(Pos)}
             {List.nth Map {Index Pos.x Pos.y}} := 0
 
             {Send NotificationM add(ID point 1 Result)}
             {Wait Result}
             {Send Gui scoreUpdate(ID Result)}
-        elseif @{List.nth Map {Index Pos.x Pos.y}} == 6 then % add bonus
+        elseif @{List.nth Map {Index Pos.x Pos.y}} == 6 then % walks on bonus
             {Send Gui hideBonus(Pos)}
             {List.nth Map {Index Pos.x Pos.y}} := 0
 
@@ -153,8 +154,6 @@ in
                 (PosPlayers.(ID.id).pos) := Pos
             [] movePlayer(ID Pos) then
                 {ExecuteMove ID Pos}
-            [] deadPlayer(ID) then
-                (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
             [] bombExploded(Pos) then
                 {ComputeVictims Pos}
             [] boxRemoved(_) then
@@ -167,7 +166,7 @@ in
                 for I in 1..Input.nbBombers do
                     if @(PosPlayers.I.lives) > 0 then PlayerID in
                         {Send PosPlayers.I.port getId(PlayerID)}
-                        {Wait PlayerID}
+                        % {Wait PlayerID}
                         PlayersNotDead := {Tuple.append otherPlayer(PlayerID) @PlayersNotDead}
                     end
                 end

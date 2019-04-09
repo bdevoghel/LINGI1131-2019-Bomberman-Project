@@ -120,7 +120,6 @@ define
          if NbLives > 0 then
             % spawn player back if it has still lives left
             {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
-            {Wait ID}
             if ID \= null then
                {Send Board spawnPlayer(ID Pos)} % tell board to display player
                {Send NotificationM spawnPlayer(ID Pos)} % notify everyone

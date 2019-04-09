@@ -18,31 +18,29 @@ define
     NotificationM
     MapM
 
-    proc {ExplodeBomb Pos Fire Bomb}
+    proc {ExplodeBomb Bomb}
         PositionsToUpdate
     in
-        {Send Gui hideBomb(Pos)}
-        PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
+        {Send Gui hideBomb(Bomb.pos)}
+        PositionsToUpdate = {GetPositionsToUpdate Bomb.pos Bomb.fire ValidFlamePosition}
+        Bomb.explosionPos = PositionsToUpdate
         for I in 1..{Record.width PositionsToUpdate} do
-            Bomb.explosionPos = PositionsToUpdate
             {Send Gui spawnFire(PositionsToUpdate.I)}
         end
     end
 
-    proc {DissipateExplosion Pos Fire Bomb}
+    proc {DissipateExplosion Bomb}
         PositionsToUpdate
     in
-        {Show a}
         if Input.isTurnByTurn then
             PositionsToUpdate = Bomb.explosionPos
         else
-            PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
+            PositionsToUpdate = {GetPositionsToUpdate Bomb.pos Bomb.fire ValidFlamePosition}
         end
-        {Show b}
-        for I in 1..{Record.width PositionsToUpdate} do 
-            MapValue
-        in
+
+        for I in 1..{Record.width PositionsToUpdate} do MapValue in
             {Send Gui hideFire(PositionsToUpdate.I)}
+
             {Send MapM getMapValue(PositionsToUpdate.I.x PositionsToUpdate.I.y MapValue)}
             if MapValue == 2 orelse MapValue == 3 then % box
                 {Send Gui hideBox(PositionsToUpdate.I)}
@@ -62,11 +60,8 @@ define
             if Fire > 0 then
                 case Dir
                 of north then NewPos = 'pt'(x:Pos.x y:Pos.y-1) ToBeContinued in
-                    {Show b0}
                     if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
-                    {Show b1}
                     if ToBeContinued then {Propagate north NewPos Fire-1} end
-                    {Show b2}
                 [] east then NewPos = 'pt'(x:Pos.x+1 y:Pos.y) ToBeContinued in
                     if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate east NewPos Fire-1} end
@@ -87,9 +82,7 @@ define
         @Positions
     end
 
-    fun {ValidFlamePosition NewPos ?ToBeContinued}
-        MapValue
-    in
+    fun {ValidFlamePosition NewPos ?ToBeContinued} MapValue in
         {Send MapM getMapValue(NewPos.x NewPos.y MapValue)}
         if MapValue == 1 then % wall
             ToBeContinued = false
@@ -131,22 +124,22 @@ in
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
-                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:_) then
+                    [] '#'(pos:Pos timer:Timer fire:_ owner:ID explosionPos:_) then
                         if Timer == 0 then
-                            {ExplodeBomb Pos Fire Bombs.I}
+                            {ExplodeBomb Bombs.I}
                             {Send NotificationM add(ID bomb 1 _)}
                             {Send NotificationM bombExploded(Pos)} % notify everyone
                         end
                     end
                 end
                 {TreatStream T Bombs}
-            [] nextTurn(GoodToGo) then NewBombs = {Cell.new bombs()} in
+            [] nextTurn(?GoodToGo) then NewBombs = {Cell.new bombs()} in
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
                         if Timer == 0 then
-                            {DissipateExplosion Pos Fire Bombs.I}
+                            {DissipateExplosion Bombs.I}
                         else 
                             NewBombs := {Tuple.append newBomb('#'(pos:Pos timer:Timer-1 fire:Fire owner:ID explosionPos:X)) @NewBombs}
                         end
@@ -155,20 +148,21 @@ in
                 GoodToGo = unit
                 {TreatStream T @NewBombs}
             [] plantBombSimultaneous(ID Pos) then NewBomb in
-                NewBomb = newBomb(pos:Pos timer:_ fire:Input.fire owner:ID explosionPos:_)
                 thread
+                    NewBomb = newBomb(pos:Pos timer:_ fire:Input.fire owner:ID explosionPos:_)
+
                     % delay before explosion
                     {Delay ({Rand} mod (Input.timingBombMax - Input.timingBombMin)) + Input.timingBombMin}
                     {Show explode}
-                    {ExplodeBomb Pos NewBomb.fire NewBomb}
-                    {Show okExplode}
+                    {ExplodeBomb NewBomb}
                     {Send NotificationM add(ID bomb 1 _)}
                     {Send NotificationM bombExploded(Pos)} % notify everyone
+                    {Show okExplode}
 
                     % delay of explosion
                     {Delay 1000}
                     {Show dissipate}
-                    {DissipateExplosion Pos NewBomb.fire NewBomb}
+                    {DissipateExplosion NewBomb}
                     {Show okDissipate}
                 end
                 {TreatStream T _}
