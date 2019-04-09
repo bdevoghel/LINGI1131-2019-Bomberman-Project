@@ -64,35 +64,8 @@ define
       {Browse turn#TurnNb}
 
       % for every player ...
-      for I in 1..Input.nbBombers do State in
-         {Send PortBombers.I getState(_ State)}
-         if State == on then Action in
-            % execute action for player
-            {Send PortBombers.I doaction(_ Action)}
-            case Action
-            of move(Pos) then 
-               {Send Board movePlayer(Bombers.I Pos)}
-               {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
-            [] bomb(Pos) then 
-               {Send BombM plantBomb(Bombers.I Pos)}
-               {Send NotificationM bombPlanted(Pos)} % notify everyone
-            [] null then 
-               {Show 'ERROR : action null on turn'#TurnNb#'by Bomber'#Bombers.I}
-            end
-         else NbLives ID Pos in % if state == off
-            {Send MapM getPlayerLives(Bombers.I NbLives)}
-            if NbLives > 0 then
-               % spawn player back if it has still lives left
-               {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
-               {Wait ID}
-               if ID \= null then
-                  {Send Board spawnPlayer(ID Pos)} % tell board to display player
-                  {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
-               else
-                  skip
-               end
-            end
-         end
+      for I in 1..Input.nbBombers do 
+         {ExecutePlayer I}
       end
 
       local GoodToGo in
@@ -106,29 +79,94 @@ define
 
       %{Send MapM debugMap}
 
-      % look for winner
+      % find winner(s) with the most points
       if {Record.width {PlayersStillAlive}} > 1 andthen {NbBoxesLeft} > 0 then 
          {ExecuteTurnByTurn TurnNb+1}
-      else % find winner(s) with the most points
-         Winners = {Cell.new winners(winners:nil score:~1)}
-      in
-         for I in 1..Input.nbBombers do
-            Result in
-            {Send NotificationM add(Bombers.I point 0 Result)}
-            if Result > @(Winners).score then
-               Winners := winners(winners:Bombers.I score:Result)
-            elseif Result == @(Winners).score then
-               Winners := winners(winners:Bombers.I|@(Winners).winners score:Result)
-            else skip
-            end
-         end
-         @(Winners).winners
+      else 
+         {FindWinner}
       end
    end
 
    fun {ExecuteSimultaneous}
-      bomber(id:~1 color:red name:none)
-      % TODO
+      % for every player ...
+      for I in 1..Input.nbBombers do
+         thread 
+            {ExecutePlayer I}
+         end
+      end
+
+      %local GoodToGo in
+      %   {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
+      %   {Wait GoodToGo} % wait turn finishes properly
+      %end 
+
+      %{Send BombM makeExplode} % make every bomb with timer at 0 explode
+
+
+      if {EndOfSimultaneous} then % loops in EndOfSimultaneous until end
+         % find winner(s) with the most points
+         {FindWinner}
+      end
+   end
+
+   proc {ExecutePlayer I}
+      State 
+   in
+      {Send PortBombers.I getState(_ State)}
+      if State == on then Action in
+         % execute action for player
+         {Send PortBombers.I doaction(_ Action)}
+         case Action
+         of move(Pos) then 
+            {Send Board movePlayer(Bombers.I Pos)}
+            {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
+         [] bomb(Pos) then 
+            {Send BombM plantBomb(Bombers.I Pos)}
+            {Send NotificationM bombPlanted(Pos)} % notify everyone
+         [] null then 
+            {Show 'ERROR : action null on by Bomber'#Bombers.I}
+         end
+      else NbLives ID Pos in % if state == off
+         {Send MapM getPlayerLives(Bombers.I NbLives)}
+         if NbLives > 0 then
+            % spawn player back if it has still lives left
+            {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
+            {Wait ID}
+            if ID \= null then
+               {Send Board spawnPlayer(ID Pos)} % tell board to display player
+               {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
+            end
+         end
+      end
+
+      if {Not Input.isTurnByTurn} then
+         {Delay ({Rand} mod (Input.thinkMax - Input.thinkMin)) + Input.thinkMin}
+         {ExecutePlayer I}
+      end
+   end
+
+   fun {EndOfSimultaneous}
+      if {Record.width {PlayersStillAlive}} > 1 andthen {NbBoxesLeft} > 0 then
+         {Delay 100}
+         {EndOfSimultaneous}
+      else
+         true
+      end
+   end
+
+   fun {FindWinner}
+      Winners = {Cell.new winners(winners:nil score:~1)}
+   in
+      for I in 1..Input.nbBombers do
+         Result in
+         {Send NotificationM add(Bombers.I point 0 Result)}
+         if Result > @(Winners).score then
+            Winners := winners(winners:Bombers.I score:Result)
+         elseif Result == @(Winners).score then
+            Winners := winners(winners:Bombers.I|@(Winners).winners score:Result)
+         end
+      end
+      @(Winners).winners
    end
 
    fun {PlayersStillAlive} PlayersAlive in % returns a tuple containing <bomber>s which have <life> > 0
