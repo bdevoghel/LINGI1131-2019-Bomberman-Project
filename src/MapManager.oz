@@ -106,8 +106,14 @@ define
             {List.nth Map {Index Pos.x Pos.y}} := 0
 
             if Input.useExtention then
-                skip
                 % TODO : implement extention
+                if {Rand} mod 2 == 0 then                   
+                    {Send NotificationM add(ID point 10 Result)}
+                    {Wait Result}
+                    {Send Gui scoreUpdate(ID Result)}
+                else
+                    {Send NotificationM add(ID bomb 1 Result)}
+                end
             else
                 if {Rand} mod 2 == 0 then                   
                     {Send NotificationM add(ID point 10 Result)}

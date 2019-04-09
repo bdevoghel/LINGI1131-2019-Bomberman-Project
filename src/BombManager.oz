@@ -1,6 +1,9 @@
 functor
 import
     Input
+
+    OS(rand:Rand)
+    System(show:Show)
 export
     initialize:StartManager
     getPosExplosions:GetPositionsToUpdate
@@ -8,6 +11,7 @@ define
    
     StartManager
     TreatStream
+    Port
 
     Gui
     Players
@@ -28,12 +32,17 @@ define
     proc {DissipateExplosion Pos Fire Bomb}
         PositionsToUpdate
     in
-        PositionsToUpdate = Bomb.explosionPos
+        {Show a}
+        if Input.isTurnByTurn then
+            PositionsToUpdate = Bomb.explosionPos
+        else
+            PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
+        end
+        {Show b}
         for I in 1..{Record.width PositionsToUpdate} do 
             MapValue
         in
             {Send Gui hideFire(PositionsToUpdate.I)}
-
             {Send MapM getMapValue(PositionsToUpdate.I.x PositionsToUpdate.I.y MapValue)}
             if MapValue == 2 orelse MapValue == 3 then % box
                 {Send Gui hideBox(PositionsToUpdate.I)}
@@ -53,8 +62,11 @@ define
             if Fire > 0 then
                 case Dir
                 of north then NewPos = 'pt'(x:Pos.x y:Pos.y-1) ToBeContinued in
+                    {Show b0}
                     if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
+                    {Show b1}
                     if ToBeContinued then {Propagate north NewPos Fire-1} end
+                    {Show b2}
                 [] east then NewPos = 'pt'(x:Pos.x+1 y:Pos.y) ToBeContinued in
                     if {ValidFlamePosition NewPos ToBeContinued} then Positions := {Tuple.append '#'(NewPos) @Positions} end
                     if ToBeContinued then {Propagate east NewPos Fire-1} end
@@ -95,7 +107,6 @@ in
 
     fun {StartManager GuiPort PortBombers NotificationManagerPort MapManagerPort}
         Stream
-        Port
     in
         {NewPort Stream Port}
         thread
@@ -112,15 +123,15 @@ in
         case Stream of nil then skip
         [] H|T then
             case H of nil then skip
-            [] plantBomb(ID Pos) then NewBombs X in
+            [] plantBomb(ID Pos) then NewBombs in
                 {Send Gui spawnBomb(Pos)}
-                NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:X)) Bombs}
+                NewBombs = {Tuple.append newBomb('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:_)) Bombs}
                 {TreatStream T NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
-                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
+                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:_) then
                         if Timer == 0 then
                             {ExplodeBomb Pos Fire Bombs.I}
                             {Send NotificationM add(ID bomb 1 _)}
@@ -143,6 +154,24 @@ in
                 end
                 GoodToGo = unit
                 {TreatStream T @NewBombs}
+            [] plantBombSimultaneous(ID Pos) then NewBomb in
+                NewBomb = newBomb(pos:Pos timer:_ fire:Input.fire owner:ID explosionPos:_)
+                thread
+                    % delay before explosion
+                    {Delay ({Rand} mod (Input.timingBombMax - Input.timingBombMin)) + Input.timingBombMin}
+                    {Show explode}
+                    {ExplodeBomb Pos NewBomb.fire NewBomb}
+                    {Show okExplode}
+                    {Send NotificationM add(ID bomb 1 _)}
+                    {Send NotificationM bombExploded(Pos)} % notify everyone
+
+                    % delay of explosion
+                    {Delay 1000}
+                    {Show dissipate}
+                    {DissipateExplosion Pos NewBomb.fire NewBomb}
+                    {Show okDissipate}
+                end
+                {TreatStream T _}
             else
                 % WARNING : unsupported message
                 {TreatStream T Bombs}
