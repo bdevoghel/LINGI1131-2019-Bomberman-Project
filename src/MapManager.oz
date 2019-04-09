@@ -3,6 +3,8 @@ import
     Input
     System(show:Show print:Print)
     BombManager(getPosExplosions:GetPosExplosions)
+
+    OS(rand:Rand)
 export
     initialize:StartManager
 define
@@ -24,7 +26,6 @@ define
             {Show ' '}
         end
         {Delay 10000}
-        {DebugMap}
     end
 
     proc {InitMap}
@@ -63,8 +64,7 @@ define
                         {Send Gui hidePlayer(ID)}
                         {Send NotificationM deadPlayer(ID)} % notify everyone
                     else 
-                        {Show 'ERROR : Result in gotHit(ID Result) == null'}
-                        % TODO : what now ?
+                        {Show 'ERROR : result in gotHit(ID Result) == null'}
                     end
                 end
             end
@@ -86,6 +86,34 @@ define
         end
     end
 
+    proc {ExecuteMove ID Pos} Result in 
+        (PosPlayers.(ID.id).pos) := Pos
+        if @{List.nth Map {Index Pos.x Pos.y}} == 5 then % add 1 point
+            {Send Gui hidePoint(Pos)}
+            {List.nth Map {Index Pos.x Pos.y}} := 0
+
+            {Send NotificationM add(ID point 1 Result)}
+            {Wait Result}
+            {Send Gui scoreUpdate(ID Result)}
+        elseif @{List.nth Map {Index Pos.x Pos.y}} == 6 then % add bonus
+            {Send Gui hideBonus(Pos)}
+            {List.nth Map {Index Pos.x Pos.y}} := 0
+
+            if Input.useExtention then
+                skip
+                % TODO : implement extention
+            else
+                if {Rand} mod 2 == 0 then                   
+                    {Send NotificationM add(ID point 10 Result)}
+                    {Wait Result}
+                    {Send Gui scoreUpdate(ID Result)}
+                else
+                    {Send NotificationM add(ID bomb 1 Result)}
+                end
+            end
+        end
+    end
+
 in
     fun {StartManager GuiPort PortBombers NotificationManagerPort}
         Stream
@@ -101,7 +129,6 @@ in
         PosPlayers = {Tuple.make '#'() Input.nbBombers}
         {InitPosPlayers PortBombers}
         NotificationM = NotificationManagerPort
-        % thread {DebugMap} end
 
         Port
     end
@@ -112,25 +139,16 @@ in
             case Message of nil then skip
             [] spawnPlayer(ID Pos) then
                 (PosPlayers.(ID.id).pos) := Pos
-                {TreatStream T}
             [] movePlayer(ID Pos) then
-                (PosPlayers.(ID.id).pos) := Pos
-                {TreatStream T}
+                {ExecuteMove ID Pos}
             [] deadPlayer(ID) then
                 (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
-                {TreatStream T}
             [] bombExploded(Pos) then
                 {ComputeVictims Pos}
-                {TreatStream T}
-            [] boxRemoved(Pos) then
-                {List.nth Map {Index Pos.x Pos.y}} := 0
-                {TreatStream T}
             [] getMapValue(X Y ?MapValue) then
                 MapValue = @{List.nth Map {Index X Y}}
-                {TreatStream T}
             [] getPlayerLives(ID ?NbLives) then
                 NbLives = @(PosPlayers.(ID.id).lives)
-                {TreatStream T}
             [] getPlayersAlive(?PlayersAlive) then PlayersNotDead = {Cell.new '#'()} in
                 for I in 1..Input.nbBombers do
                     if @(PosPlayers.I.lives) > 0 then PlayerID in
@@ -140,11 +158,16 @@ in
                     end
                 end
                 PlayersAlive = @PlayersNotDead
-                {TreatStream T}
-            else
-                % WARNING : unsupported message
-                {TreatStream T}
+            [] spawnPoint(Pos) then
+                {Send Gui spawnPoint(Pos)}
+                {List.nth Map {Index Pos.x Pos.y}} := 5
+            [] spawnBonus(Pos) then
+                {Send Gui spawnBonus(Pos)}
+                {List.nth Map {Index Pos.x Pos.y}} := 6
+            [] debugMap then
+                 thread {DebugMap} end
             end
+            {TreatStream T}
         end
     end
 end

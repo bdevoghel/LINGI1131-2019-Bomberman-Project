@@ -10,9 +10,9 @@ define
     Players
     MapM
 
-    proc {SendInfoToPlayers Message}
+    proc {SendToPlayers Message}
         for P in 1..{Record.width Players} do
-            {Send Players.P info(Message)}
+            {Send Players.P Message}
         end
     end
 in
@@ -35,32 +35,29 @@ in
         [] Message|T then
             case Message of nil then skip
             [] spawnPlayer(ID Pos) then
-                {SendInfoToPlayers spawnPlayer(ID Pos)}
+                {SendToPlayers info(spawnPlayer(ID Pos))}
                 {Send MapM spawnPlayer(ID Pos)}
-                {TreatStream T}
             [] movePlayer(ID Pos) then
-                {SendInfoToPlayers movePlayer(ID Pos)}
+                {SendToPlayers info(movePlayer(ID Pos))}
                 {Send MapM movePlayer(ID Pos)}
-                {TreatStream T}
             [] deadPlayer(ID) then
-                {SendInfoToPlayers deadPlayer(ID)}
+                {SendToPlayers info(deadPlayer(ID))}
                 {Send MapM deadPlayer(ID)}
-                {TreatStream T}
             [] bombPlanted(Pos) then
-                {SendInfoToPlayers bombPlanted(Pos)}
-                {TreatStream T}
+                {SendToPlayers info(bombPlanted(Pos))}
             [] bombExploded(Pos) then
-                {SendInfoToPlayers bombExploded(Pos)}
+                {SendToPlayers info(bombExploded(Pos))}
                 {Send MapM bombExploded(Pos)}
-                {TreatStream T}
             [] boxRemoved(Pos) then
-                {SendInfoToPlayers boxRemoved(Pos)}
-                {Send MapM boxRemoved(Pos)}
-                {TreatStream T}
-            else
-                % WARNING : unsupported message
-                {TreatStream T}
+                {SendToPlayers info(boxRemoved(Pos))}
+            [] spawnPoint(Pos) then
+                {Send MapM spawnPoint(Pos)}
+            [] spawnBonus(Pos) then
+                {Send MapM spawnBonus(Pos)}
+            [] add(ID Type Option ?Result) then
+                {Send Players.(ID.id) add(Type Option Result)}
             end
+            {TreatStream T}
         end
     end
 end

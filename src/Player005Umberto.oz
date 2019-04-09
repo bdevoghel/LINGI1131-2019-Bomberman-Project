@@ -115,15 +115,15 @@ define
             PosCandidates = {MoveCandidates} % tuple of where the bomber could move
         in
             % for choosing random (like Player000bomber)
-            % Pos := PosCandidates.(({Rand} mod {Record.width PosCandidates}) + 1)
+            Pos := PosCandidates.(({Rand} mod {Record.width PosCandidates}) + 1)
 
             % for choosing the smalest value
-            Pos := PosCandidates.1
-            for I in 2..{Record.width PosCandidates} do
-                if @{List.nth Map {Index PosCandidates.I.x PosCandidates.I.y}} < @{List.nth Map {Index (@Pos).x (@Pos).y}} then
-                    Pos := PosCandidates.I
-                end
-            end
+            %Pos := PosCandidates.1
+            %for I in 2..{Record.width PosCandidates} do
+            %    if @{List.nth Map {Index PosCandidates.I.x PosCandidates.I.y}} < @{List.nth Map {Index (@Pos).x (@Pos).y}} then
+            %        Pos := PosCandidates.I
+            %    end
+            %end
             move(@Pos)
         else
             bomb(@Pos)

@@ -14,20 +14,21 @@ define
     NotificationM
     MapM
 
-    proc {ExplodeBomb Pos Fire}
+    proc {ExplodeBomb Pos Fire Bomb}
         PositionsToUpdate
     in
         {Send Gui hideBomb(Pos)}
         PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
         for I in 1..{Record.width PositionsToUpdate} do
+            Bomb.explosionPos = PositionsToUpdate
             {Send Gui spawnFire(PositionsToUpdate.I)}
         end
     end
 
-    proc {DissipateExplosion Pos Fire}
+    proc {DissipateExplosion Pos Fire Bomb}
         PositionsToUpdate
     in
-        PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
+        PositionsToUpdate = Bomb.explosionPos
         for I in 1..{Record.width PositionsToUpdate} do 
             MapValue
         in
@@ -37,9 +38,9 @@ define
             if MapValue == 2 orelse MapValue == 3 then % box
                 {Send Gui hideBox(PositionsToUpdate.I)}
                 if MapValue == 2 then % box with point
-                    {Send Gui spawnPoint(PositionsToUpdate.I)}
+                    {Send NotificationM spawnPoint(PositionsToUpdate.I)}
                 elseif MapValue == 3 then % box with bonus
-                    {Send Gui spawnBonus(PositionsToUpdate.I)}
+                    {Send NotificationM spawnBonus(PositionsToUpdate.I)}
                 end
                 {Send NotificationM boxRemoved(PositionsToUpdate.I)} % notify everyone
             end
@@ -98,7 +99,7 @@ in
     in
         {NewPort Stream Port}
         thread
-	        {TreatStream Stream 'bombs'(1:'#'(pos:pt(x:1 y:1) timer:~1 fire:0 owner:'GOD'))}
+	        {TreatStream Stream 'bombs'()}
         end
         Gui = GuiPort
         Players = PortBombers
@@ -111,32 +112,32 @@ in
         case Stream of nil then skip
         [] H|T then
             case H of nil then skip
-            [] plantBomb(Owner Pos) then NewBombs in
+            [] plantBomb(ID Pos) then NewBombs X in
                 {Send Gui spawnBomb(Pos)}
-                NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:Owner)) Bombs}
+                NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:X)) Bombs}
                 {TreatStream T NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
-                    [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
+                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
                         if Timer == 0 then
-                            {ExplodeBomb Pos Fire}
-                            {Send Owner add(bomb 1 _)}
+                            {ExplodeBomb Pos Fire Bombs.I}
+                            {Send NotificationM add(ID bomb 1 _)}
                             {Send NotificationM bombExploded(Pos)} % notify everyone
                         end
                     end
                 end
                 {TreatStream T Bombs}
-            [] nextTurn(GoodToGo) then NewBombs = {Cell.new bombs()} in % TODO : improve by not remembering the position of the fire ...
+            [] nextTurn(GoodToGo) then NewBombs = {Cell.new bombs()} in
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
-                    [] '#'(pos:Pos timer:Timer fire:Fire owner:Owner) then
+                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
                         if Timer == 0 then
-                            {DissipateExplosion Pos Fire}
+                            {DissipateExplosion Pos Fire Bombs.I}
                         else 
-                            NewBombs := {Tuple.append newBomb('#'(pos:Pos timer:Timer-1 fire:Fire owner:Owner)) @NewBombs}
+                            NewBombs := {Tuple.append newBomb('#'(pos:Pos timer:Timer-1 fire:Fire owner:ID explosionPos:X)) @NewBombs}
                         end
                     end
                 end

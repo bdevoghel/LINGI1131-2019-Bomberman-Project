@@ -62,9 +62,6 @@ define
 
    fun {ExecuteTurnByTurn TurnNb}
       {Browse turn#TurnNb}
-      {Send BombM makeExplode} % make every bomb with timer at 0 explode
-
-      {Delay TurnByTurnGameDelay}
 
       % for every player ...
       for I in 1..Input.nbBombers do State in
@@ -77,13 +74,12 @@ define
                {Send Board movePlayer(Bombers.I Pos)}
                {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
             [] bomb(Pos) then 
-               {Send BombM plantBomb(PortBombers.I Pos)}
+               {Send BombM plantBomb(Bombers.I Pos)}
                {Send NotificationM bombPlanted(Pos)} % notify everyone
             [] null then 
-               {Show 'Action null on turn'#TurnNb#'by Bomber'#Bombers.I}
-               % TODO : what now ?
+               {Show 'ERROR : action null on turn'#TurnNb#'by Bomber'#Bombers.I}
             end
-         else NbLives ID Pos in
+         else NbLives ID Pos in % if state == off
             {Send MapM getPlayerLives(Bombers.I NbLives)}
             if NbLives > 0 then
                % spawn player back if it has still lives left
@@ -100,9 +96,15 @@ define
       end
 
       local GoodToGo in
-      {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
-      {Wait GoodToGo} % wait turn finishes properly
+         {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
+         {Wait GoodToGo} % wait turn finishes properly
       end 
+
+      {Send BombM makeExplode} % make every bomb with timer at 0 explode
+
+      {Delay TurnByTurnGameDelay}
+
+      %{Send MapM debugMap}
 
       % look for winner
       local WinnerId in
@@ -176,7 +178,5 @@ in
       end
       {Send Board displayWinner(WinnerId)}
    end
-
-   % TODO : quit game properly
 
 end
