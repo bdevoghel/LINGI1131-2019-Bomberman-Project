@@ -42,7 +42,6 @@ in
                 {Send MapM movePlayer(ID Pos)}
             [] deadPlayer(ID) then
                 {SendToPlayers info(deadPlayer(ID))}
-                {Send MapM deadPlayer(ID)}
             [] bombPlanted(Pos) then
                 {SendToPlayers info(bombPlanted(Pos))}
             [] bombExploded(Pos) then

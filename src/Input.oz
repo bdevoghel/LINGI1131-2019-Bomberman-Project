@@ -29,7 +29,7 @@ in
 
 %%%% Style of game %%%%
    
-   IsTurnByTurn = false
+   IsTurnByTurn = true
    UseExtention = false
    PrintOK = false
 

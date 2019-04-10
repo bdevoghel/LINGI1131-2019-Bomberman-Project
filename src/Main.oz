@@ -23,6 +23,8 @@ define
    TurnByTurnGameDelay = 1000 % msec between each turn
    SpawnLocations
 
+   StopPlayers
+
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
       SpawnPos = {Cell.new spawnPos()}
       N
@@ -60,29 +62,23 @@ define
       SpawnList
    end
 
-   fun {ExecuteTurnByTurn TurnNb}
+   fun {ExecuteTurnByTurn TurnNb} GoodToGo in
       {Browse turn#TurnNb}
-
       % for every player ...
       for I in 1..Input.nbBombers do 
          {ExecutePlayer I}
       end
 
-      local GoodToGo in
-         {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
-         {Wait GoodToGo} % wait turn finishes properly
-      end 
-
+      {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
+      {Wait GoodToGo} % wait turn finishes properly
       {Send BombM makeExplode} % make every bomb with timer at 0 explode
 
       {Delay TurnByTurnGameDelay}
 
-      %{Send MapM debugMap}
-
-      % find winner(s) with the most points
       if {Record.width {PlayersStillAlive}} > 1 andthen {NbBoxesLeft} > 0 then 
          {ExecuteTurnByTurn TurnNb+1}
       else 
+         % find winner(s) with the most points
          {FindWinner}
       end
    end
@@ -90,48 +86,43 @@ define
    fun {ExecuteSimultaneous}
       % for every player ...
       for I in 1..Input.nbBombers do
-         thread 
-            {ExecutePlayer I}
-         end
+         thread {ExecutePlayer I} end
       end
 
-      %local GoodToGo in
-      %   {Send BombM nextTurn(GoodToGo)} % decrease all bomb's timers
-      %   {Wait GoodToGo} % wait turn finishes properly
-      %end 
-
-      %{Send BombM makeExplode} % make every bomb with timer at 0 explode
-
-
       if {EndOfSimultaneous} then % loops in EndOfSimultaneous until end
+         StopPlayers := true
          % find winner(s) with the most points
          {FindWinner}
       end
    end
 
    proc {ExecutePlayer I}
-      State 
+      ID State 
    in
-      {Send PortBombers.I getState(_ State)}
+      {Send PortBombers.I getState(ID State)}
       if State == on then Action in
          % execute action for player
          {Send PortBombers.I doaction(_ Action)}
          case Action
          of move(Pos) then 
-            {Send Board movePlayer(Bombers.I Pos)}
-            {Send NotificationM movePlayer(Bombers.I Pos)} % notify everyone
-         [] bomb(Pos) then 
-            {Send BombM plantBomb(Bombers.I Pos)}
+            {Send Board movePlayer(ID Pos)}
+            {Send NotificationM movePlayer(ID Pos)} % notify everyone
+         [] bomb(Pos) then
+            if Input.isTurnByTurn then
+               {Send BombM plantBomb(ID Pos)}
+            else
+               {Send BombM plantBombSimultaneous(ID Pos)}
+            end
             {Send NotificationM bombPlanted(Pos)} % notify everyone
          [] null then 
-            {Show 'ERROR : action null on by Bomber'#Bombers.I}
+            {Show 'ERROR : action null on by Bomber'#ID}
          end
-      else NbLives ID Pos in % if state == off
-         {Send MapM getPlayerLives(Bombers.I NbLives)}
+      else NbLives Pos in % if state == off
+         {Send MapM getPlayerLives(ID NbLives)} {Wait NbLives}
          if NbLives > 0 then
             % spawn player back if it has still lives left
-            {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
-            {Wait ID}
+            {Send PortBombers.I spawn(_ Pos)} % tell player he's alive
+            {Wait Pos}
             if ID \= null then
                {Send Board spawnPlayer(ID Pos)} % tell board to display player
                {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
@@ -139,7 +130,7 @@ define
          end
       end
 
-      if {Not Input.isTurnByTurn} then
+      if {Not Input.isTurnByTurn} andthen {Not @StopPlayers} then
          {Delay ({Rand} mod (Input.thinkMax - Input.thinkMin)) + Input.thinkMin}
          {ExecutePlayer I}
       end
@@ -224,6 +215,7 @@ in
       if Input.isTurnByTurn then
          WinnerId = {ExecuteTurnByTurn 0}
       else 
+         StopPlayers = {Cell.new false}
          WinnerId = {ExecuteSimultaneous}
       end
       {Send Board displayWinner(WinnerId)}

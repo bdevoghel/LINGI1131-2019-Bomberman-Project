@@ -1,6 +1,8 @@
 functor
 import
     Input
+
+    OS(rand:Rand)
 export
     initialize:StartManager
     getPosExplosions:GetPositionsToUpdate
@@ -8,30 +10,34 @@ define
    
     StartManager
     TreatStream
+    Port
 
     Gui
     Players
     NotificationM
     MapM
 
-    proc {ExplodeBomb Pos Fire Bomb}
+    proc {ExplodeBomb Bomb}
         PositionsToUpdate
     in
-        {Send Gui hideBomb(Pos)}
-        PositionsToUpdate = {GetPositionsToUpdate Pos Fire ValidFlamePosition}
+        {Send Gui hideBomb(Bomb.pos)}
+        PositionsToUpdate = {GetPositionsToUpdate Bomb.pos Bomb.fire ValidFlamePosition}
+        Bomb.explosionPos = PositionsToUpdate
         for I in 1..{Record.width PositionsToUpdate} do
-            Bomb.explosionPos = PositionsToUpdate
             {Send Gui spawnFire(PositionsToUpdate.I)}
         end
     end
 
-    proc {DissipateExplosion Pos Fire Bomb}
+    proc {DissipateExplosion Bomb}
         PositionsToUpdate
     in
-        PositionsToUpdate = Bomb.explosionPos
-        for I in 1..{Record.width PositionsToUpdate} do 
-            MapValue
-        in
+        if Input.isTurnByTurn then
+            PositionsToUpdate = Bomb.explosionPos
+        else
+            PositionsToUpdate = {GetPositionsToUpdate Bomb.pos Bomb.fire ValidFlamePosition}
+        end
+
+        for I in 1..{Record.width PositionsToUpdate} do MapValue in
             {Send Gui hideFire(PositionsToUpdate.I)}
 
             {Send MapM getMapValue(PositionsToUpdate.I.x PositionsToUpdate.I.y MapValue)}
@@ -75,9 +81,7 @@ define
         @Positions
     end
 
-    fun {ValidFlamePosition NewPos ?ToBeContinued}
-        MapValue
-    in
+    fun {ValidFlamePosition NewPos ?ToBeContinued} MapValue in
         {Send MapM getMapValue(NewPos.x NewPos.y MapValue)}
         if MapValue == 1 then % wall
             ToBeContinued = false
@@ -95,7 +99,6 @@ in
 
     fun {StartManager GuiPort PortBombers NotificationManagerPort MapManagerPort}
         Stream
-        Port
     in
         {NewPort Stream Port}
         thread
@@ -112,30 +115,30 @@ in
         case Stream of nil then skip
         [] H|T then
             case H of nil then skip
-            [] plantBomb(ID Pos) then NewBombs X in
+            [] plantBomb(ID Pos) then NewBombs in
                 {Send Gui spawnBomb(Pos)}
-                NewBombs = {Tuple.append 'newBomb'('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:X)) Bombs}
+                NewBombs = {Tuple.append newBomb('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:_)) Bombs}
                 {TreatStream T NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
-                    [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
+                    [] '#'(pos:Pos timer:Timer fire:_ owner:ID explosionPos:_) then
                         if Timer == 0 then
-                            {ExplodeBomb Pos Fire Bombs.I}
+                            {ExplodeBomb Bombs.I}
                             {Send NotificationM add(ID bomb 1 _)}
                             {Send NotificationM bombExploded(Pos)} % notify everyone
                         end
                     end
                 end
                 {TreatStream T Bombs}
-            [] nextTurn(GoodToGo) then NewBombs = {Cell.new bombs()} in
+            [] nextTurn(?GoodToGo) then NewBombs = {Cell.new bombs()} in
                 for I in 1..{Record.width Bombs} do
                     case Bombs.I 
                     of nil then skip
                     [] '#'(pos:Pos timer:Timer fire:Fire owner:ID explosionPos:X) then
                         if Timer == 0 then
-                            {DissipateExplosion Pos Fire Bombs.I}
+                            {DissipateExplosion Bombs.I}
                         else 
                             NewBombs := {Tuple.append newBomb('#'(pos:Pos timer:Timer-1 fire:Fire owner:ID explosionPos:X)) @NewBombs}
                         end
@@ -143,6 +146,22 @@ in
                 end
                 GoodToGo = unit
                 {TreatStream T @NewBombs}
+            [] plantBombSimultaneous(ID Pos) then NewBomb in
+                thread
+                    {Send Gui spawnBomb(Pos)}
+                    NewBomb = newBomb(pos:Pos timer:_ fire:Input.fire owner:ID explosionPos:_)
+
+                    % delay before explosion
+                    {Delay ({Rand} mod (Input.timingBombMax - Input.timingBombMin)) + Input.timingBombMin}
+                    {ExplodeBomb NewBomb}
+                    {Send NotificationM add(ID bomb 1 _)}
+                    {Send NotificationM bombExploded(Pos)} % notify everyone
+
+                    % delay of explosion
+                    {Delay 1000}
+                    {DissipateExplosion NewBomb}
+                end
+                {TreatStream T _}
             else
                 % WARNING : unsupported message
                 {TreatStream T Bombs}
