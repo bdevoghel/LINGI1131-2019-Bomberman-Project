@@ -3,7 +3,6 @@ import
     Input
 
     OS(rand:Rand)
-    System(show:Show)
 export
     initialize:StartManager
     getPosExplosions:GetPositionsToUpdate
@@ -149,21 +148,18 @@ in
                 {TreatStream T @NewBombs}
             [] plantBombSimultaneous(ID Pos) then NewBomb in
                 thread
+                    {Send Gui spawnBomb(Pos)}
                     NewBomb = newBomb(pos:Pos timer:_ fire:Input.fire owner:ID explosionPos:_)
 
                     % delay before explosion
                     {Delay ({Rand} mod (Input.timingBombMax - Input.timingBombMin)) + Input.timingBombMin}
-                    {Show explode}
                     {ExplodeBomb NewBomb}
                     {Send NotificationM add(ID bomb 1 _)}
                     {Send NotificationM bombExploded(Pos)} % notify everyone
-                    {Show okExplode}
 
                     % delay of explosion
                     {Delay 1000}
-                    {Show dissipate}
                     {DissipateExplosion NewBomb}
-                    {Show okDissipate}
                 end
                 {TreatStream T _}
             else

@@ -23,6 +23,8 @@ define
    TurnByTurnGameDelay = 1000 % msec between each turn
    SpawnLocations
 
+   StopPlayers
+
    fun {FindSpawnLocations} % returns a tuple of <position> where players can spawn (4 in Input.map)
       SpawnPos = {Cell.new spawnPos()}
       N
@@ -62,7 +64,6 @@ define
 
    fun {ExecuteTurnByTurn TurnNb} GoodToGo in
       {Browse turn#TurnNb}
-
       % for every player ...
       for I in 1..Input.nbBombers do 
          {ExecutePlayer I}
@@ -89,6 +90,7 @@ define
       end
 
       if {EndOfSimultaneous} then % loops in EndOfSimultaneous until end
+         StopPlayers := true
          % find winner(s) with the most points
          {FindWinner}
       end
@@ -115,11 +117,12 @@ define
          [] null then 
             {Show 'ERROR : action null on by Bomber'#ID}
          end
-      else NbLives ID Pos in % if state == off
-         {Send MapM getPlayerLives(ID NbLives)}
+      else NbLives Pos in % if state == off
+         {Send MapM getPlayerLives(ID NbLives)} {Wait NbLives}
          if NbLives > 0 then
             % spawn player back if it has still lives left
-            {Send PortBombers.I spawn(ID Pos)} % tell player he's alive
+            {Send PortBombers.I spawn(_ Pos)} % tell player he's alive
+            {Wait Pos}
             if ID \= null then
                {Send Board spawnPlayer(ID Pos)} % tell board to display player
                {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
@@ -127,7 +130,7 @@ define
          end
       end
 
-      if {Not Input.isTurnByTurn} then
+      if {Not Input.isTurnByTurn} andthen {Not @StopPlayers} then
          {Delay ({Rand} mod (Input.thinkMax - Input.thinkMin)) + Input.thinkMin}
          {ExecutePlayer I}
       end
@@ -212,6 +215,7 @@ in
       if Input.isTurnByTurn then
          WinnerId = {ExecuteTurnByTurn 0}
       else 
+         StopPlayers = {Cell.new false}
          WinnerId = {ExecuteSimultaneous}
       end
       {Send Board displayWinner(WinnerId)}
