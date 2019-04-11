@@ -106,14 +106,19 @@ define
             {Send Gui hideBonus(Pos)}
             {List.nth Map {Index Pos.x Pos.y}} := 0
 
-            if Input.useExtention then
-                % TODO : implement extention
-                if {Rand} mod 2 == 0 then                   
+            if Input.useExtention then % TODO : implement extention
+                Bonus = {Rand} mod 3 
+            in 
+                if Bonus == 0 then % wins 10 points
                     {Send NotificationM add(ID point 10 Result)}
                     {Wait Result}
                     {Send Gui scoreUpdate(ID Result)}
-                else
+                elseif Bonus == 1 then % wins bomb
                     {Send NotificationM add(ID bomb 1 Result)}
+                elseif Bonus == 2 then % wins shield
+                    {Send NotificationM add(ID shield 1 Result)}
+                else
+                    {Show 'ERROR : unknown bonus'#Bonus}
                 end
             else
                 if {Rand} mod 2 == 0 then                   
@@ -126,7 +131,6 @@ define
             end
         end
     end
-
 in
     fun {StartManager GuiPort PortBombers NotificationManagerPort}
         Stream

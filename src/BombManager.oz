@@ -117,7 +117,7 @@ in
             case H of nil then skip
             [] plantBomb(ID Pos) then NewBombs in
                 {Send Gui spawnBomb(Pos)}
-                NewBombs = {Tuple.append newBomb('#'(pos:Pos timer:Input.timingBomb+1 fire:Input.fire owner:ID explosionPos:_)) Bombs}
+                NewBombs = {Tuple.append newBomb('#'(pos:Pos timer:Input.timingBomb+2 fire:Input.fire owner:ID explosionPos:_)) Bombs}
                 {TreatStream T NewBombs}
             [] makeExplode then
                 for I in 1..{Record.width Bombs} do
