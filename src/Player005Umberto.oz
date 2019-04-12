@@ -109,29 +109,39 @@ define
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     proc {ExecuteAction ID BomberPos Map NbBombs ?GetID ?Action}
-        NewPos
-        ActionCandidates = {ComputeActionCandidates Map NbBombs BomberPos} % tuple of where the bomber could move (or bomb if current position)
+        PossibleMoves = {GetPossibleMoves Map NbBombs BomberPos} % tuple of where the bomber could move (or bomb if current position)
     in
         % for choosing random (like Player000bomber)
-        NewPos = ActionCandidates.(({Rand} mod {Record.width ActionCandidates}) + 1)
+        % PossibleMoves.(({Rand} mod {Record.width PossibleMoves}) + 1)
+        {Show ID.id#executeAction#possibleMoves#{Record.width PossibleMoves}}
 
-        if NewPos == @BomberPos then
-            Action = bomb(@BomberPos)
-        else
-            Action = move(NewPos)
+        if {Record.width PossibleMoves} < 2 then
+            if {Record.width PossibleMoves} == 1 then
+                {Show ID.id#executeAction#onlyOption}
+                {DoAction PossibleMoves.1 ID BomberPos NbBombs GetID Action}
+            else
+                {Show 'ERROR : bomber has nowhere to move'#ID}
+            end
+        else % has to choose between moves
+            if {Record.width PossibleMoves} == 2 andthen @NbBombs > 0 then % go back or bomb
+                {Show ID.id#executeAction#goBackOrBomb}
+                {DoAction @BomberPos ID BomberPos NbBombs GetID Action} % bomb
+            else
+                {Show ID.id#executeAction#goToSafestPlace}
+                {DoAction {ComputeSafestPlace BomberPos PossibleMoves Map} ID BomberPos NbBombs GetID Action}
+            end
         end
-        GetID = ID
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    fun {ComputeActionCandidates Map NbBombs BomberPos}
+    fun {GetPossibleMoves Map NbBombs BomberPos}
         Candidates
     in
         if @NbBombs > 0 then
-            Candidates = {Cell.new candidates( (@BomberPos) )}
+            Candidates = {Cell.new candidates((@BomberPos))}
         else
-            Candidates = {Cell.new candidates( )}
+            Candidates = {Cell.new candidates()}
         end
 
         for Candidate in [pt(x:(@BomberPos).x+1 y:(@BomberPos).y) pt(x:(@BomberPos).x y:(@BomberPos).y+1) pt(x:(@BomberPos).x-1 y:(@BomberPos).y) pt(x:(@BomberPos).x y:(@BomberPos).y-1)] do
@@ -143,6 +153,56 @@ define
         end
 
         @Candidates
+    end
+
+    proc {DoAction Move ID BomberPos NbBombs ?GetID ?Action}
+        if Move == @BomberPos andthen @NbBombs > 0 then
+            Action = bomb(@BomberPos)
+            NbBombs := @NbBombs - 1
+        elseif Move \= @BomberPos then
+            Action = move(Move)
+            BomberPos := Move
+        else
+            {Show 'ERROR : player wants to stay on same place'#ID}
+        end
+        GetID = ID
+    end
+
+    fun {ComputeSafestPlace BomberPos PossibleMoves Map}
+        SafestMoves = {Cell.new safePlaces()}
+    in
+        for I in 1..{Record.width PossibleMoves} do
+            if @{List.nth Map {Pos2Index PossibleMoves.I}} >= 0 then
+                SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
+            end
+        end
+        
+        if {Record.width @SafestMoves} == 1 then
+            {Show onlyOneSafeMove#@SafestMoves}
+            (@SafestMoves).1
+        elseif {Record.width @SafestMoves} > 1 then Best = {Cell.new (@SafestMoves).2} in % choseBestSafePlace
+            for I in 1..{Record.width @SafestMoves} do
+                if (@SafestMoves).I \= @BomberPos then
+                    Best := {BestLocation Map (@SafestMoves).I @Best}
+                end
+            end
+            {Show choseBestSafePlace#@Best}
+            @Best
+        else Best = {Cell.new PossibleMoves.1} in % choseLessDangerousPlace
+            for I in 2..{Record.width PossibleMoves} do
+                Best := {BestLocation Map PossibleMoves.I @Best}
+            end
+            {Show choseLessDangerousPlace#@Best}
+            @Best
+        end
+    end
+
+    fun {BestLocation Map Option1 Option2}
+        if @{List.nth Map {Pos2Index Option1}} > @{List.nth Map {Pos2Index Option2}} then
+            Option1
+        else
+            Option2
+        end
     end
 
     %%%%%%%%%%%%%%%%%% HELPER FUNCTIONS %%%%%%%%%%%%%%%%%%
