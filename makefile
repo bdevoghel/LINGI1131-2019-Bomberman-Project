@@ -22,6 +22,7 @@ compile:
 
 compilePlayers:
 	@make -s Player005Umberto.ozf
+	@make -s Player005Tozzi.ozf
 	# + others
 	@echo '=> Players compiled'
 
@@ -49,6 +50,7 @@ clean:
 	@rm -fv bin/Main.ozf
 	@rm -fv bin/Input.ozf
 	@rm -fv bin/Player005Umberto.ozf
+	@rm -fv bin/Player005Tozzi.ozf
 
 GUI.ozf:
 	@ozc -c src/GUI.oz -o bin/GUI.ozf
@@ -73,3 +75,5 @@ Main.ozf:
 	@echo '=> Main compiled'
 Player005Umberto.ozf:
 	@ozc -c src/Player005Umberto.oz -o bin/Player005Umberto.ozf
+Player005Tozzi.ozf:
+	@ozc -c src/Player005Tozzi.oz -o bin/Player005Tozzi.ozf

@@ -3,6 +3,7 @@ import
    Player000bomber
    % Add here the name of the functor of a player
    Player005Umberto
+   Player005Tozzi
 export
    playerGenerator:PlayerGenerator
 define
@@ -14,6 +15,7 @@ in
       % Add here the pattern to recognize the name used in the 
       % input file and launch the portPlayer function from the functor
       [] player005Umberto then {Player005Umberto.portPlayer ID}
+      [] player005Tozzi then {Player005Tozzi.portPlayer ID}
       else
          raise 
             unknownedPlayer('Player not recognized by the PlayerManager '#Kind)

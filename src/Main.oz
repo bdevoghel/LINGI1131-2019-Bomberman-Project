@@ -202,6 +202,7 @@ in
       {Send PortBombers.I spawn(ID Pos)} % tell player he's alive ; Pos == SpawnLocations.I
       {Wait ID}
       {Send Board spawnPlayer(ID Pos)} % tell board to display player
+      %ICI est ce que dans l'initialisation on n'utiliserait pas aussi NotifM pour spawn a transm a board?
       {Send NotificationM spawnPlayer(ID Pos)} % notify everyone
    end
 
