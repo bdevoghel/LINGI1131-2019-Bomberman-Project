@@ -41,6 +41,11 @@ main:
 	@make -s compilePlayers
 	@make -s run
 
+workInProgress:
+	@make -s compilePlayers
+	#@make -s compileInput
+	@make -s run
+
 clean:
 	@rm -fv bin/PlayerManager.ozf
 	@rm -fv bin/BombManager.ozf

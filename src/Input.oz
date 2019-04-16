@@ -50,13 +50,17 @@ in
 	        [1 0 1 0 1 0 1 0 1 0 1 2 1]
 	        [1 3 2 0 0 0 0 0 0 2 3 0 1]
 	        [1 0 1 0 1 0 1 0 1 0 1 2 1]
-	        [1 4 0 0 0 0 0 0 0 0 0 4 1]
+	        [1 4 0 3 0 0 0 0 0 0 0 4 1]
            [1 1 1 1 1 1 1 1 1 1 1 1 1]]
 
 %%%% Players description %%%%
 
    NbBombers = 3
+<<<<<<< HEAD
    Bombers = [player000bomber player005Umberto player005Tozzi]
+=======
+   Bombers = [player000bomber player005Umberto player005Umberto]
+>>>>>>> 411d977e95d098339a44dcc5f24de5166f0570b4
    ColorBombers = [blue red green]
 
 %%%% Parameters %%%%

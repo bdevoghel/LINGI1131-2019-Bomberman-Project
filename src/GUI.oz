@@ -37,6 +37,11 @@ define
    WaitForStop
 
    %BoomIMG = {QTk.newImage photo(url:'src/ressources/explosion.png' height:0 width:0)}
+   Points = {QTk.newImage photo(url:'src/ressources/points.png' height:0 width:0)}
+   Bonus = {QTk.newImage photo(url:'src/ressources/bonus.png' height:0 width:0)}
+   Barrel = {QTk.newImage photo(url:'src/ressources/barrel.png' height:0 width:0)}
+   BarrelBonus = {QTk.newImage photo(url:'src/ressources/barrelBonus.png' height:0 width:0)}
+   Bomb = {QTk.newImage photo(url:'src/ressources/bomb.png' height:0 width:0)}
 
 in
 
@@ -54,12 +59,12 @@ in
 
       % configure rows and set headers
       for N in 1..Input.nbRow do
-	      {Grid rowconfigure(N minsize:50 weight:0 pad:5)}
+	      {Grid rowconfigure(N minsize:50 weight:0 pad:1)} % pad 5
       end
 
       % configure columns and set headers
       for N in 1..Input.nbColumn do
-	      {Grid columnconfigure(N minsize:50 weight:0 pad:5)}
+	      {Grid columnconfigure(N minsize:50 weight:0 pad:1)} % pad 5
       end
 
       % configure lifeboard
@@ -91,11 +96,16 @@ in
 		    3:label(text:"" width:1 height:1 bg:c(215 204 200))
 		    4:label(text:"" width:1 height:1 bg:c(141 110 99))
 		   )
-   Items = items(boxpoint:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(139 69 19) handle:Handle) end 
-		 boxbonus:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(210 105 30) handle:Handle) end 
-		 point:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:yellow) end 
-		 bonus:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:green) end 
-		 bomb:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:black) end
+   Items = items(%boxpoint:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(139 69 19) handle:Handle) end 
+       boxpoint:fun{$ Handle} label(image:Barrel width:40 height:40 handle:Handle bg:Squares.0.bg) end 
+		 %boxbonus:fun{$ Handle} label(text:"" borderwidth:2 relief:raised width:4 height:2 bg:c(210 105 30) handle:Handle) end 
+		 boxbonus:fun{$ Handle} label(image:BarrelBonus width:40 height:40 handle:Handle bg:Squares.0.bg) end 
+		 %point:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:yellow) end 
+		 point:fun{$ Handle} label(image:Points height:40 width:40 handle:Handle bg:Squares.0.bg) end 
+		 %bonus:fun{$ Handle} label(text:"" height:1 width:1 handle:Handle bg:green) end 
+		 bonus:fun{$ Handle} label(image:Bonus height:40 width:40 handle:Handle bg:Squares.0.bg) end 
+		 %bomb:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:black) end
+		 bomb:fun{$ Handle} label(image:Bomb height:40 width:40 handle:Handle bg:Squares.0.bg) end
        fire:fun{$ Handle} label(text:"" height:1 width:2 handle:Handle bg:red) end 
 		 %fire:fun{$ Handle} label(image:BoomIMG height:40 width:40 handle:Handle) end 
 		)
