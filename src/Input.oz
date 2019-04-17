@@ -56,11 +56,8 @@ in
 %%%% Players description %%%%
 
    NbBombers = 3
-<<<<<<< HEAD
    Bombers = [player000bomber player005Umberto player005Tozzi]
-=======
-   Bombers = [player000bomber player005Umberto player005Umberto]
->>>>>>> 411d977e95d098339a44dcc5f24de5166f0570b4
+   %Bombers = [player000bomber player005Umberto player005Umberto]
    ColorBombers = [blue red green]
 
 %%%% Parameters %%%%

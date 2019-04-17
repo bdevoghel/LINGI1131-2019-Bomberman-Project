@@ -23,15 +23,19 @@ define
     Map
     PosPlayers
 
+    DangerMap
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%% HELPER FUNCTIONS %%%%%%%%%%%%%%%%%%
 
 
     proc {InitMap}
         Map = {List.make Input.nbRow*Input.nbColumn}
+        DangerMap = {List.make Input.nbRow*Input.nbColumn}
         for X in 1..Input.nbColumn do
             for Y in 1..Input.nbRow do
                 {List.nth Map {Index X Y}} = {Cell.new ({List.nth {List.nth Input.map Y} X} mod 4)} % mod 4 is for spawnFloor == floor
+                {List.nth DangerMap {Index X Y}} = {Cell.new 0}
             end
         end
     end
@@ -50,7 +54,10 @@ define
     proc {ComputeDangerZone Pos}
         PosExplosions = {GetPosExplosions Pos Input.fire}
     in
-        skip % TODO : update map
+        for I in 1..{Record.width PosExplosions} do %tuple des positions dangereuses
+        {List.nth DangerMap {Index PosExplosions.I.x PosExplosions.I.y}}:=1
+        %skip % TODO : update map
+        end
     end
 
     fun {GetPosExplosions Pos Fire}
@@ -110,25 +117,43 @@ define
         {DebugMap}
     end
 
-    fun {ActionToExecute}
+    fun{ActionToExecute}
         if {DoMove} == true then
-            PosCandidates = {MoveCandidates} % tuple of where the bomber could move
+            PosCandidates = {MoveCandidates}
+            NoDangerPos = {NoDangerZone PosCandidates}
         in
-            % for choosing random (like Player000bomber)
-            Pos := PosCandidates.(({Rand} mod {Record.width PosCandidates}) + 1)
-
-            % for choosing the smalest value
-            %Pos := PosCandidates.1
-            %for I in 2..{Record.width PosCandidates} do
-            %    if @{List.nth Map {Index PosCandidates.I.x PosCandidates.I.y}} < @{List.nth Map {Index (@Pos).x (@Pos).y}} then
-            %        Pos := PosCandidates.I
-            %    end
-            %end
+            if {Record.width NoDangerPos}>0 then
+                Pos := NoDangerPos.(({Rand} mod {Record.width NoDangerPos}) + 1)
+            else 
+                Pos := PosCandidates.(({Rand} mod {Record.width PosCandidates}) + 1)
+            
+            end
             move(@Pos)
         else
             bomb(@Pos)
         end
     end
+
+    % fun {ActionToExecute}
+    %     if {DoMove} == true then
+    %         PosCandidates = {MoveCandidates} % tuple of where the bomber could move
+    %     in
+    %         % for choosing random (like Player000bomber)
+    %         Pos := PosCandidates.(({Rand} mod {Record.width PosCandidates}) + 1)
+
+    %         % for choosing the smalest value
+    %         %Pos := PosCandidates.1
+    %         %for I in 2..{Record.width PosCandidates} do
+    %         %    if @{List.nth Map {Index PosCandidates.I.x PosCandidates.I.y}} < @{List.nth Map {Index (@Pos).x (@Pos).y}} then
+    %         %        Pos := PosCandidates.I
+    %         %    end
+    %         %end
+    %         move(@Pos)
+    %     else
+    %         bomb(@Pos)
+    %     end
+    % end
+    
 
     fun {DoMove}
         true
@@ -147,6 +172,20 @@ define
         end
         @Candidates
     end
+
+    fun {NoDangerZone PosCandidates}
+        NoDangerPos = {Cell.new noDanger()}
+    in
+        for I in 1..{Record.width PosCandidates} do
+            DangerValue = @{List.nth DangerMap {Index PosCandidates.I.x PosCandidates.I.y}}
+        in
+            if DangerValue \= 1 then
+                NoDangerPos := {Tuple.append '#'(PosCandidates.I) @NoDangerPos}
+            end
+        end
+        @NoDangerPos
+    end
+
 
     %%%%%%%%%%%%%%%%%% HELPER FUNCTIONS %%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
