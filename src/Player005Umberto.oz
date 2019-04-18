@@ -4,6 +4,7 @@ import
     Projet2019util
     System(show:Show print:Print)
     OS(rand:Rand)
+    Number(abs:Abs)
 export
     portPlayer:StartPlayer
 define   
@@ -44,7 +45,8 @@ define
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in
             if MapValue == 0 then
-                {List.nth Map {Pos2Index PosExplosions.I}} := ~100 % TODO : quid bonus ? quid info precedente ?
+            %ok si simultane, sinon thinkmin/max?
+                {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})+100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
             end
         end
     end
@@ -108,7 +110,7 @@ define
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    proc {ExecuteAction ID BomberPos Map NbBombs ?GetID ?Action}
+    proc {ExecuteAction ID BomberPos Map NbBombs PosPlayers ?GetID ?Action}
         PossibleMoves = {GetPossibleMoves Map NbBombs BomberPos} % tuple of where the bomber could move (or bomb if current position)
     in
         % for choosing random (like Player000bomber)
@@ -116,7 +118,7 @@ define
         {Show ID.id#executeAction#possibleMoves#{Record.width PossibleMoves}}
 
         if {Record.width PossibleMoves} < 2 then
-            if {Record.width PossibleMoves} == 1 then
+            if {Record.width PossibleMoves} == 1 then %pas poss! sa place + go back?!
                 {Show ID.id#executeAction#onlyOption}
                 {DoAction PossibleMoves.1 ID BomberPos NbBombs GetID Action}
             else
@@ -128,7 +130,7 @@ define
                 {DoAction @BomberPos ID BomberPos NbBombs GetID Action} % bomb
             else
                 {Show ID.id#executeAction#goToSafestPlace}
-                {DoAction {ComputeSafestPlace BomberPos PossibleMoves Map} ID BomberPos NbBombs GetID Action}
+                {DoAction {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers} ID BomberPos NbBombs GetID Action}
             end
         end
     end
@@ -168,11 +170,11 @@ define
         GetID = ID
     end
 
-    fun {ComputeSafestPlace BomberPos PossibleMoves Map}
+    fun {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers}
         SafestMoves = {Cell.new safePlaces()}
     in
         for I in 1..{Record.width PossibleMoves} do
-            if @{List.nth Map {Pos2Index PossibleMoves.I}} >= 0 then
+            if @{List.nth Map {Pos2Index PossibleMoves.I}} < 100 then %ici
                 SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
             end
         end
@@ -203,6 +205,31 @@ define
         else
             Option2
         end
+    end
+
+    fun{BestForObjective Objective Pos SafestMoves PosPlayers}
+        case Objective
+        of goNearestPlayer then {GoNearestPlayer Pos SafestMoves PosPlayers}
+        [] goNearestBox then {GoNearestPlayer Pos SafestMoves PosPlayers}
+        [] goNearestPoint then {GoNearestPlayer Pos SafestMoves PosPlayers}
+        [] goNearestBonus then {GoNearestPlayer Pos SafestMoves PosPlayers}
+        end
+    end
+
+    fun{GoNearestPlayer Pos SafestMoves PosPlayers} %Pos = pos de ce bomber
+        Nearest = {Cell.new near(dist:Input.nbRow+Input.nbColumn+1 playerPos:0 move:0)}
+    in
+        for I in 1..{Record.width SafestMoves} do
+            for I in 1..{Record.width PosPlayers} do
+                NewDist = {Abs (PosPlayers.I.x + PosPlayers.I.y) - (SafestMoves.I.x + SafestMoves.I.y)}
+            in
+                if NewDist < (@Nearest).dist then
+                    Nearest:= near(dist:NewDist playerPos:PosPlayers.I move:SafestMoves.I)
+                end
+                skip
+            end
+        end
+        @(Nearest).move
     end
 
     %%%%%%%%%%%%%%%%%% HELPER FUNCTIONS %%%%%%%%%%%%%%%%%%
@@ -270,8 +297,9 @@ in
                     GetPos = null
                 end
             [] doaction(?GetID ?Action) then
+            %un nouveau tour est joue --> mettre a jour bombe timing
                 if @State == on then
-                    {ExecuteAction ID BomberPos Map NbBombs GetID Action}
+                    {ExecuteAction ID BomberPos Map NbBombs PosPlayers GetID Action}
                 else
                     GetID = null
                     Action = null
