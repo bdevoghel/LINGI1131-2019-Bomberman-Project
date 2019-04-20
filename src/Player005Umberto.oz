@@ -119,11 +119,11 @@ define
         {Show ID.id#executeAction#possibleMoves#{Record.width PossibleMoves}}
 
         if {Record.width PossibleMoves} < 2 then
-            if {Record.width PossibleMoves} == 1 then %pas poss! sa place + go back?!
+            if {Record.width PossibleMoves} == 1 then %revenir d'ou il vient --> il peut pas rester a sa place car n'a pas de bombe
                 {Show ID.id#executeAction#onlyOption}
                 {DoAction PossibleMoves.1 ID BomberPos NbBombs GetID Action}
             else
-                {Show 'ERROR : bomber has nowhere to move'#ID}
+                {Show 'ERROR : bomber has nowhere to move'#ID} %peut toujours revenir d'ou il vient!
             end
         else % has to choose between moves
             if {Record.width PossibleMoves} == 2 andthen @NbBombs > 0 then % go back or bomb
@@ -154,7 +154,7 @@ define
         for Candidate in [pt(x:(@BomberPos).x+1 y:(@BomberPos).y) pt(x:(@BomberPos).x y:(@BomberPos).y+1) pt(x:(@BomberPos).x-1 y:(@BomberPos).y) pt(x:(@BomberPos).x y:(@BomberPos).y-1)] do
             MapValue = @{List.nth Map {Pos2Index Candidate}}
         in
-            if MapValue \= 1 andthen MapValue \= 2 andthen MapValue \= 3 then
+            if MapValue mod 10 \= 1 andthen MapValue mod 10 \= 2 andthen MapValue mod 10 \= 3 then
                 Candidates := {Tuple.append '#'(Candidate) @Candidates}
             end
         end
@@ -190,7 +190,7 @@ define
         elseif {Record.width @SafestMoves} > 1 then Best = {Cell.new (@SafestMoves).2} in % choseBestSafePlace
             for I in 1..{Record.width @SafestMoves} do
                 if (@SafestMoves).I \= @BomberPos then
-                    Best := {BestLocation Map (@SafestMoves).I @Best}
+                    Best := {RandLocation Map (@SafestMoves).I @Best}
                 end
             end
             
@@ -201,14 +201,14 @@ define
             @Best
         else Best = {Cell.new PossibleMoves.1} in % choseLessDangerousPlace
             for I in 2..{Record.width PossibleMoves} do
-                Best := {BestLocation Map PossibleMoves.I @Best}
+                Best := {RandLocation Map PossibleMoves.I @Best}
             end
             {Show choseLessDangerousPlace#@Best}
             @Best
         end
     end
 
-    fun {BestLocation Map Option1 Option2}
+    fun {RandLocation Map Option1 Option2}
         if {Rand} mod 2 == 0 then
             Option1
         else
@@ -222,31 +222,32 @@ define
     end
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs} %Pos = pos du bomber mais pas cell
-        BestMovesForObjective = {GoNearestAll Map Pos} in 
+        MaximumDistance = Input.fire + 1
+        BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance}
+    in 
         {Show bestMovesForObjective#BestMovesForObjective}
         %choix de tactique ici
-        %pour le moment prend pas en compte les SafestMoves
+        %pour le moment prend pas en compte les PossibleMoves --> pris dans GoNearestAll
         %pour le moment privilegie bonus proches (-de MinimumDistance) puis points, puis...
         %est-ce qu'on veut d'abord regarder les box qui sont encore plus proche (genre juste a cote pour les faire boom?)
         %ou autre tactique?
-        if BestMovesForObjective.bonus.move \= 0 then 
+        
+        %1) : safePlace
+        %2) : si dist==1 d'une box --> boom
+        %3) : bonus puis point puis boxbonus puis boxpoint
+
+        if @{List.nth Map {Pos2Index Pos}} > 100 andthen BestMovesForObjective.safePlace.move \= 0 then %danger --> 1) safePlace
+                BestMovesForObjective.safePlace.move
+        elseif BestMovesForObjective.boxBonus.dist == 1 andthen @NbBombs > 0 then Pos % 2) BOOM
+        elseif BestMovesForObjective.boxPoint.dist == 1 andthen @NbBombs > 0 then Pos
+        elseif BestMovesForObjective.bonus.move \= 0 then 
             BestMovesForObjective.bonus.move
         elseif BestMovesForObjective.point.move \= 0 then 
             BestMovesForObjective.point.move
-        elseif BestMovesForObjective.boxBonus.move \= 0 then %on peut regarder les dist et preferer bombe si distance=1
-            if BestMovesForObjective.boxBonus.dist == 1 then 
-                if @NbBombs > 0 then Pos %sauf si pas de bombe en stock!!!!
-                else {ComputeSafestPlace {Cell.new Pos} PossibleMoves Map PosPlayers} %ou autre? 
-                end
-            else BestMovesForObjective.boxBonus.move                 %ATTENTION SI la dist est a 1, peut pas y aller! --> Boom
-            end
+        elseif BestMovesForObjective.boxBonus.move \= 0 then
+            BestMovesForObjective.boxBonus.move                 
         elseif BestMovesForObjective.boxPoint.move \= 0 then 
-            if BestMovesForObjective.boxPoint.dist == 1 then
-                if @NbBombs > 0 then Pos
-                else {ComputeSafestPlace {Cell.new Pos} PossibleMoves Map PosPlayers}
-                end
-            else BestMovesForObjective.boxPoint.move                 %ATTENTION SI la dist est a 1, peut pas y aller! --> Boom
-            end
+            BestMovesForObjective.boxPoint.move                 
         else
             %a voir ce qu'on veut! 
             %GoPlayer = {GoNearestPlayer Pos SafestMoves PosPlayers} in %safestMove >2 --> d'office \=0?
@@ -257,231 +258,246 @@ define
         %return type pt(x:(@BomberPos).x+1 y:(@BomberPos).y)
     end
 
-    % fun{BestForObjective Objective Pos SafestMoves PosPlayers Map}
-    %     case Objective
-    %     of goNearestPlayer then {GoNearestPlayer Pos SafestMoves PosPlayers}
-    %     [] goNearestBoxPoint then 
-    %         BestMovesForObjective = {GoNearestAll Map Pos} in
-    %         BestMovesForObjective.boxPoint
-    %     [] goNearestBoxBonus then 
-    %         BestMovesForObjective = {GoNearestAll Map Pos} in
-    %         BestMovesForObjective.boxBonus
-    %     [] goNearestPoint then
-    %         BestMovesForObjective = {GoNearestAll Map Pos} in
-    %         BestMovesForObjective.point
-    %     [] goNearestBonus then
-    %         BestMovesForObjective = {GoNearestAll Map Pos} in
-    %         BestMovesForObjective.bonus
+
+    % %pas testee
+    % %car si on veut le mettre dans goNearestAll, pour avoir le chemin qui va avec aussi...
+    % fun{GoNearestPlayer Pos SafestMoves PosPlayers} %Pos = pos de ce bomber
+    %     Nearest = {Cell.new near(dist:Input.nbRow+Input.nbColumn+1 playerPos:0 move:0)}
+    % in
+    %     for I in 1..{Record.width SafestMoves} do
+    %         for I in 1..{Record.width PosPlayers} do
+    %             NewDist = {Abs (PosPlayers.I.x + PosPlayers.I.y) - (SafestMoves.I.x + SafestMoves.I.y)}
+    %         in
+    %             if NewDist < (@Nearest).dist andthen Pos \= SafestMoves.I then %pour pas qu'il reste au meme endroit -->bombe %??OK COMME COMPARAISON????
+    %                 Nearest:= near(dist:NewDist playerPos:PosPlayers.I move:SafestMoves.I)
+    %             end
+    %         end
     %     end
+    %     @(Nearest).move
     % end
 
-    %pas testee
-    %car si on veut le mettre dans goNearestAll, pour avoir le chemin qui va avec aussi...
-    fun{GoNearestPlayer Pos SafestMoves PosPlayers} %Pos = pos de ce bomber
-        Nearest = {Cell.new near(dist:Input.nbRow+Input.nbColumn+1 playerPos:0 move:0)}
-    in
-        for I in 1..{Record.width SafestMoves} do
-            for I in 1..{Record.width PosPlayers} do
-                NewDist = {Abs (PosPlayers.I.x + PosPlayers.I.y) - (SafestMoves.I.x + SafestMoves.I.y)}
-            in
-                if NewDist < (@Nearest).dist andthen Pos \= SafestMoves.I then %pour pas qu'il reste au meme endroit -->bombe %??OK COMME COMPARAISON????
-                    Nearest:= near(dist:NewDist playerPos:PosPlayers.I move:SafestMoves.I)
-                end
-            end
-        end
-        @(Nearest).move
-    end
-
-    fun {GoNearestAll Map Pos}
+    fun {GoNearestAll Map Pos MaximumDistance}
         InitialDist = Input.nbRow+Input.nbColumn+1
-        Nearest = {Cell.new near(boxPoint:bP(dist:InitialDist pos:0 move:0) boxBonus:bB(dist:InitialDist pos:1 move:0) point:p(dist:InitialDist pos:0 move:0) bonus:b(dist:InitialDist pos:0 move:0))}
-        MaximumDistance = 4 %a nous de definir MaxDist!! 
+        Nearest = {Cell.new near(boxPoint:bP(dist:InitialDist pos:0 move:0) boxBonus:bB(dist:InitialDist pos:1 move:0) point:p(dist:InitialDist pos:0 move:0) bonus:b(dist:InitialDist pos:0 move:0) safePlace:sP(dist:InitialDist pos:0 move:0))} 
         proc {Propagate Dir Pos MaxDist FirstMove} %MaxDist pour pas qu'il traverse toute la map pour une box
             if MaxDist > 0 then
-                NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus in
+                NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace in
                 case Dir %ATTENTION pas revenr d'ou on vient
                 of north then 
                     NewPos = 'pt'(x:Pos.x y:Pos.y-1)
-                        if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus} then 
+                    if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace} then 
                         {Propagate north NewPos MaxDist-1 FirstMove}
                         {Propagate east NewPos MaxDist-1 FirstMove}
                         {Propagate west NewPos MaxDist-1 FirstMove}
                     end
+                    if FoundSafePlace then
+                        NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
+                        if NewDist < (@Nearest).safePlace.dist then
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:sP(dist:NewDist pos:NewPos move:FirstMove))
+                            %{Show @Nearest#north}
+                        end
+                    end
                     if FoundBoxPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxPoint.dist then
-                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#north}
                         end
                     end
                     if FoundBoxBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxBonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#north}
                         end
                     end
                     if FoundPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).point.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#north}
                         end
                     end
                     if FoundBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).bonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove))
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove) safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#north}
                         end
                     end
                 [] south then
                     NewPos = 'pt'(x:Pos.x y:Pos.y+1) 
-                        if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus} then 
+                    if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace} then 
                         {Propagate east NewPos MaxDist-1 FirstMove}
                         {Propagate south NewPos MaxDist-1 FirstMove}
                         {Propagate west NewPos MaxDist-1 FirstMove}
                     end
+                    if FoundSafePlace then
+                        NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
+                        if NewDist < (@Nearest).safePlace.dist then
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:sP(dist:NewDist pos:NewPos move:FirstMove))
+                            %{Show @Nearest#north}
+                        end
+                    end
                     if FoundBoxPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxPoint.dist then
-                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#south}
                         end
                     end
                     if FoundBoxBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxBonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#south}
                         end
                     end
                     if FoundPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).point.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#south}
                         end
                     end
                     if FoundBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).bonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove))
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove) safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#south}
                         end
                     end
                 [] west then
                     NewPos = 'pt'(x:Pos.x-1 y:Pos.y)
-                        if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus} then 
+                    if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace} then 
                         {Propagate north NewPos MaxDist-1 FirstMove}
                         {Propagate south NewPos MaxDist-1 FirstMove}
                         {Propagate west NewPos MaxDist-1 FirstMove}
                     end
+                    if FoundSafePlace then
+                        NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
+                        if NewDist < (@Nearest).safePlace.dist then
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:sP(dist:NewDist pos:NewPos move:FirstMove))
+                            %{Show @Nearest#north}
+                        end
+                    end
                     if FoundBoxPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxPoint.dist then
-                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#west}
                         end
                     end
                     if FoundBoxBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxBonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#west}
                         end
                     end
                     if FoundPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).point.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#west}
                         end
                     end
                     if FoundBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).bonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove))
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove) safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#west}
                         end
                     end
                 [] east then 
                     NewPos = 'pt'(x:Pos.x+1 y:Pos.y)
-                    if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus} then 
+                    if {ValidPath NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace} then 
                         {Propagate north NewPos MaxDist-1 FirstMove}
                         {Propagate east NewPos MaxDist-1 FirstMove}
                         {Propagate south NewPos MaxDist-1 FirstMove}
                     end
+                    if FoundSafePlace then
+                        NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
+                        if NewDist < (@Nearest).safePlace.dist then
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:sP(dist:NewDist pos:NewPos move:FirstMove))
+                            %{Show @Nearest#north}
+                        end
+                    end
                     if FoundBoxPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxPoint.dist then
-                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:bP(dist:NewDist pos:NewPos move:FirstMove) boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#east}
                         end
                     end
                     if FoundBoxBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).boxBonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:bB(dist:NewDist pos:NewPos move:FirstMove) point:(@Nearest).point bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#east}
                         end
                     end
                     if FoundPoint then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).point.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus)
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:p(dist:NewDist pos:NewPos move:FirstMove) bonus:(@Nearest).bonus safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#east}
                         end
                     end
                     if FoundBonus then 
                         NewDist = MaximumDistance + 1 - MaxDist in %distance a parcourir (en nbr cases) jusque box
                         if NewDist < (@Nearest).bonus.dist then
-                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove))
+                            Nearest:= near(boxPoint:(@Nearest).boxPoint boxBonus:(@Nearest).boxBonus point:(@Nearest).point bonus:b(dist:NewDist pos:NewPos move:FirstMove) safePlace:(@Nearest).safePlace)
                             %{Show @Nearest#east}
                         end
                     end
                 end                
             end
         end
-        fun {ValidPath NewPos ?FoundBoxPoint ?FoundBoxBonus ?FoundPoint ?FoundBonus}
+        fun {ValidPath NewPos ?FoundBoxPoint ?FoundBoxBonus ?FoundPoint ?FoundBonus ?FoundSafePlace}
             MapValue =  @{List.nth Map {Pos2Index NewPos}}
         in %ATTENTION SI MAP AVEC DES +100 faut ajouter des modulos 10! Oui ou bien non parce que on va pas sur les zones en danger??
-            if MapValue == 1 then % wall --> stop trying that path
+            if MapValue < 10 andthen MapValue mod 10 \= 1 andthen MapValue mod 10 \= 2 andthen MapValue mod 10 \= 3 then %depends de nos valeurs 
+                FoundSafePlace = true
+            else
+                FoundSafePlace = false
+            end
+            if MapValue mod 10 == 1 then % wall --> stop trying that path
                 %{Show foundWall#NewPos}
                 FoundBoxPoint = false 
                 FoundBoxBonus = false 
                 FoundPoint = false
                 FoundBonus = false
                 false
-            elseif MapValue == 2 then 
+            elseif MapValue mod 10 == 2 then 
                 %{Show foundBoxPoint#NewPos}
                 FoundBoxPoint = true 
                 FoundBoxBonus = false 
                 FoundPoint = false
                 FoundBonus = false
                 false % box -->cannot go through
-            elseif MapValue == 3 then
+            elseif MapValue mod 10 == 3 then
                 %{Show foundBoxBonus#NewPos}
                 FoundBoxPoint = false 
                 FoundBoxBonus = true 
                 FoundPoint = false
                 FoundBonus = false
                 false % box -->cannot go through
-            elseif MapValue == 5 then
+            elseif MapValue mod 10 == 5 then
                 %{Show foundPoint#NewPos}
                 FoundBoxPoint = false 
                 FoundBoxBonus = false 
                 FoundPoint = true
                 FoundBonus = false
                 true %--> peut continuer a marcher
-            elseif MapValue == 6 then
+            elseif MapValue mod 10 == 6 then
                 %{Show foundBonus#NewPos}
                 FoundBoxPoint = false 
                 FoundBoxBonus = false 
                 FoundPoint = false
                 FoundBonus = true
                 true
-            else %=4 ou 0 = spawnPos ou floor
+            else %=4 ou 0 ou 104 ou 100 ou ... = spawnPos ou floor
                 FoundBoxPoint = false 
                 FoundBoxBonus = false 
                 FoundPoint = false
@@ -577,7 +593,7 @@ in
             [] add(Type Option ?Result) then
                 case Type of nil then skip
                 [] bomb then
-                    {List.nth Map {Pos2Index @BomberPos}} := 0 %POUR LE MOMENT MODIF QUE LES SIENS
+                    {List.nth Map {Pos2Index @BomberPos}} := 0 %POUR LE MOMENT MODIF QUE LES SIENS -5!!
                     NbBombs := @NbBombs + Option
                     Result = @NbBombs
                 [] point then

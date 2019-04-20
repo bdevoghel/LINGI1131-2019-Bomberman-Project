@@ -1,7 +1,10 @@
 GUI.ozf
 Input.ozf
 Main.ozf
+Player000name.ozf
 Player005Umberto.ozf
+Player005Tozzi.ozf
+Player003John.ozf
 PlayerManager.ozf
 BombManager.ozf
 NotificationManager.ozf
