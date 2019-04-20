@@ -626,6 +626,7 @@ in
                     (PosPlayers.(ID.id).pos) := Pos
                 [] movePlayer(ID Pos) then
                     (PosPlayers.(ID.id).pos) := Pos
+                    {List.nth Map {Pos2Index Pos}} := @{List.nth Map {Pos2Index Pos}} - @{List.nth Map {Pos2Index Pos}} mod 10 % TODO : ne marche pas si triche !!
                 [] deadPlayer(ID) then
                     (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
                 [] bombPlanted(Pos) then
