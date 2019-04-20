@@ -10,7 +10,7 @@ import
    System(show:Show) % debug only
    Browser(browse:Browse)
    Application(exit:Exit)
-   OS(rand:Rand)
+   OS(rand:Rand pipe:Pipe)
 define
    Board
    Bombers
@@ -173,6 +173,7 @@ define
 in
    % in case Stop button in pressed
    thread {Wait GUI.waitForStop} {Show 'Successful Exit'} {Exit 0} end
+   thread {Wait GUI.waitForRestart} {Show 'Restarting Game (no more debugging available)'} {Pipe make ['run'] _ _} {Delay 100} {Exit 0} end
 
    Board = {GUI.portWindow}
    {Send Board buildWindow}
