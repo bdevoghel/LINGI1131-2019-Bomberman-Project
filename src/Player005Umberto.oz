@@ -45,7 +45,7 @@ define
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
-            {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})+100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+            {List.nth Map {Pos2Index PosExplosions.I}} := MapValue + 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
         end
     end
     proc {ComputeNoDangerZone Map Pos}
@@ -55,8 +55,8 @@ define
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
-            if MapValue >= 100 then  %VERIF!!! 
-                {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})-100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+            if MapValue >= 100 then %Verif si if utile
+                {List.nth Map {Pos2Index PosExplosions.I}} := MapValue - 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
             end
         end
     end
@@ -139,17 +139,21 @@ define
                 {Show 'ERROR : bomber has nowhere to move'#ID} %peut toujours revenir d'ou il vient!
             end
         else % has to choose between moves
-            if {Record.width PossibleMoves} == 2 andthen @NbBombs > 0 then % go back or bomb
-                {Show ID.id#executeAction#goBackOrBomb}
-                {DoAction @BomberPos ID BomberPos NbBombs GetID Action} % bomb
-            else
-                WhatToDo in
-                WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
-                {Show whatToDo#WhatToDo}
-                {Show ID.id#executeAction#goToSafestPlace}
-                {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
-                %{DoAction {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers} ID BomberPos NbBombs GetID Action}
-            end
+            WhatToDo in
+            WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
+            {Show whatToDo#WhatToDo}
+            {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
+            % if {Record.width PossibleMoves} == 2 andthen @NbBombs > 0 then % go back or bomb
+            %     {Show ID.id#executeAction#goBackOrBomb}
+            %     {DoAction @BomberPos ID BomberPos NbBombs GetID Action} % bomb
+            % else
+            %     WhatToDo in
+            %     WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
+            %     {Show whatToDo#WhatToDo}
+            %     {Show ID.id#executeAction#goToSafestPlace}
+            %     {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
+            %     %{DoAction {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers} ID BomberPos NbBombs GetID Action}
+            % end
         end
     end
 
@@ -638,8 +642,6 @@ in
                         {List.nth Map {Pos2Index Pos}} := MapValue - 5
                     elseif MapValue mod 10 == 6 then % bonus
                         {List.nth Map {Pos2Index Pos}} := MapValue - 6
-                    else
-                        {Show 'ERROR : box removed where no box was'#Pos}
                     end
                     (PosPlayers.(ID.id).pos) := Pos
                 [] deadPlayer(ID) then
@@ -647,9 +649,7 @@ in
                 [] bombPlanted(Pos) then
                     {ComputeDangerZone Map Pos}
                 [] bombExploded(Pos) then
-                    {Show 'Bomb exploded at'#Pos#'(information to treat)'}
                     {ComputeNoDangerZone Map Pos}
-                    skip % TODO : bombExploded
                 [] boxRemoved(Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
                     if MapValue mod 10 == 2 then % box with point
                         {List.nth Map {Pos2Index Pos}} := MapValue + 3

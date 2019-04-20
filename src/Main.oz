@@ -20,7 +20,7 @@ define
    NotificationM
    MapM
 
-   TurnByTurnGameDelay = 2000 % msec between each turn
+   TurnByTurnGameDelay = 1000 % msec between each turn
    SpawnLocations
 
    StopPlayers
