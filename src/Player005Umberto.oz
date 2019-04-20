@@ -55,7 +55,7 @@ define
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
-            if MapValue >= 100 then 
+            if MapValue >= 100 then  %VERIF!!! 
                 {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})-100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
             end
         end
@@ -89,7 +89,7 @@ define
             if MapValue mod 10 == 1 then % wall
                 ToBeContinued = false
                 false
-            elseif MapValue mod 10 == 2 orelse MapValue mod 10 == 3 then % box
+            elseif MapValue == 2 orelse MapValue == 3 then % box %pas de modulo car plusieurs bombes vont plus loin
                 ToBeContinued = false
                 true
             else 
@@ -651,10 +651,10 @@ in
                     {ComputeNoDangerZone Map Pos}
                     skip % TODO : bombExploded
                 [] boxRemoved(Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
-                    if MapValue == 2 then % box with point
-                        {List.nth Map {Pos2Index Pos}} := 5
-                    elseif MapValue == 3 then % box with bonus
-                        {List.nth Map {Pos2Index Pos}} := 6
+                    if MapValue mod 10 == 2 then % box with point
+                        {List.nth Map {Pos2Index Pos}} := MapValue + 3
+                    elseif MapValue mod 10 == 3 then % box with bonus
+                        {List.nth Map {Pos2Index Pos}} := MapValue + 3
                     else
                         {Show 'ERROR : box removed where no box was'#Pos}
                     end
