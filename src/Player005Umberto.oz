@@ -5,7 +5,6 @@ import
     System(show:Show print:Print)
     Browser(browse:Browse)
     OS(rand:Rand)
-    Number(abs:Abs)
 export
     portPlayer:StartPlayer
 define   
@@ -41,22 +40,20 @@ define
     proc {ComputeDangerZone Map Pos}
         PosExplosions = {GetPosExplosions Map Pos Input.fire}
     in
-        % TODO : update map properly
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
-            {List.nth Map {Pos2Index PosExplosions.I}} := MapValue + 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+            {List.nth Map {Pos2Index PosExplosions.I}} := MapValue + 100*Input.timingBomb
         end
     end
     proc {ComputeNoDangerZone Map Pos}
         PosExplosions = {GetPosExplosions Map Pos Input.fire}
     in
-        % TODO : update map properly
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
             if MapValue >= 100 then %Verif si if utile
-                {List.nth Map {Pos2Index PosExplosions.I}} := MapValue - 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+                {List.nth Map {Pos2Index PosExplosions.I}} := MapValue - 100*Input.timingBomb
             end
         end
     end
@@ -553,7 +550,7 @@ in
         PosPlayers
     in
         thread
-            OutputStream = {Projet2019util.portPlayerChecker 'UmbertoTozzi' ID Stream}
+            OutputStream = {Projet2019util.portPlayerChecker 'Umberto' ID Stream}
         end
         {NewPort Stream Port}
         thread
