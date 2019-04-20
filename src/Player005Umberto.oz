@@ -3,7 +3,6 @@ import
     Input
     Projet2019util
     System(show:Show print:Print)
-    Browser(browse:Browse)
     OS(rand:Rand)
 export
     portPlayer:StartPlayer
@@ -231,24 +230,6 @@ define
         end
     end
 
-
-    % %pas testee
-    % %car si on veut le mettre dans goNearestAll, pour avoir le chemin qui va avec aussi...
-    % fun{GoNearestPlayer Pos SafestMoves PosPlayers} %Pos = pos de ce bomber
-    %     Nearest = {Cell.new near(dist:Input.nbRow+Input.nbColumn+1 playerPos:0 move:0)}
-    % in
-    %     for I in 1..{Record.width SafestMoves} do
-    %         for I in 1..{Record.width PosPlayers} do
-    %             NewDist = {Abs (PosPlayers.I.x + PosPlayers.I.y) - (SafestMoves.I.x + SafestMoves.I.y)}
-    %         in
-    %             if NewDist < (@Nearest).dist andthen Pos \= SafestMoves.I then %pour pas qu'il reste au meme endroit -->bombe %??OK COMME COMPARAISON????
-    %                 Nearest:= near(dist:NewDist playerPos:PosPlayers.I move:SafestMoves.I)
-    %             end
-    %         end
-    %     end
-    %     @(Nearest).move
-    % end
-
     fun {GoNearestAll Map Pos MaximumDistance PossibleMoves AvoidDanger}
         InitialDist = Input.nbRow+Input.nbColumn+1
         Nearest = {Cell.new near(boxPoint:bP(dist:InitialDist pos:0 move:0) boxBonus:bB(dist:InitialDist pos:1 move:0) point:p(dist:InitialDist pos:0 move:0) bonus:b(dist:InitialDist pos:0 move:0) safePlace:sP(dist:InitialDist pos:0 move:0))} 
@@ -459,18 +440,6 @@ define
         MapValueSouth = @{List.nth Map {Pos2Index 'pt'(x:Pos.x y:Pos.y+1)}}
         MapValueWest = @{List.nth Map {Pos2Index 'pt'(x:Pos.x-1 y:Pos.y)}}
     in
-        % for I in 1.. {Record.width PossibleMoves} do 
-            % {Show possibleMoves#PossibleMoves.I}
-            % {Show actualPos#Pos}
-            % if PossibleMoves.I == pt(x:Pos.x y:Pos.y-1) then {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}
-            % elseif PossibleMoves.I == pt(x:Pos.x+1 y:Pos.y) then {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)}
-            % elseif PossibleMoves.I == pt(x:Pos.x y:Pos.y+1) then {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)}
-            % elseif PossibleMoves.I == pt(x:Pos.x-1 y:Pos.y) then {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)}
-            % elseif PossibleMoves.I == pt(x:Pos.x y:Pos.y) then skip %si il peut rester sur place
-            % else {Show 'ERROR : PossibleMoves not in the proposed points'}
-            % end
-        % end
-
         %on se propage si pas de danger ou si une box (car si box en danger on s'en fout et doit venir dans le compte pour la boomer) 
         if AvoidDanger == true then 
             if MapValueNorth < 100 orelse MapValueNorth mod 10 == 3 orelse MapValueNorth mod 10 == 2 then {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)} end
