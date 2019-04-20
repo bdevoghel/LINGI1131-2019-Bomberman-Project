@@ -108,8 +108,12 @@ define
     proc {DebugMap Map}
         M = {Cell.new Map} in 
         for Y in 1..Input.nbRow do
-            for X in 1..Input.nbColumn do
-                {Print @(@M.1)}
+            for X in 1..Input.nbColumn do Val = @(@M.1) in
+                if Val < 0 then {Print Val} {Print ' '}
+                elseif Val > 9 then {Print ' '} {Print Val} {Print ' '}
+                else {Print '  '} {Print Val} {Print '  '}
+                end
+
                 M := @M.2
             end
             {Show ' '}
@@ -635,6 +639,7 @@ in
                     (PosPlayers.(ID.id).pos) := Pos
                 [] movePlayer(ID Pos) then
                     (PosPlayers.(ID.id).pos) := Pos
+                    {List.nth Map {Pos2Index Pos}} := @{List.nth Map {Pos2Index Pos}} - @{List.nth Map {Pos2Index Pos}} mod 10 % TODO : ne marche pas si triche !!
                 [] deadPlayer(ID) then
                     (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
                 [] bombPlanted(Pos) then
