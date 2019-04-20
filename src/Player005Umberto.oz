@@ -99,8 +99,12 @@ define
     proc {DebugMap Map}
         M = {Cell.new Map} in 
         for Y in 1..Input.nbRow do
-            for X in 1..Input.nbColumn do
-                {Print @(@M.1)}
+            for X in 1..Input.nbColumn do Val = @(@M.1) in
+                if Val < 0 then {Print Val} {Print ' '}
+                elseif Val > 9 then {Print ' '} {Print Val} {Print ' '}
+                else {Print '  '} {Print Val} {Print '  '}
+                end
+
                 M := @M.2
             end
             {Show ' '}
@@ -556,7 +560,7 @@ in
         {InitMap Map}
         {InitPosPlayers PosPlayers}
 
-        % thread {DebugMap Map} end
+        thread {DebugMap Map} end
 
         Port
     end
