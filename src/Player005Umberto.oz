@@ -184,37 +184,22 @@ define
         GetID = ID
     end
 
-    % fun {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers}
-    %     SafestMoves = {Cell.new safePlaces()}
-    % in
-    %     for I in 1..{Record.width PossibleMoves} do
-    %         if @{List.nth Map {Pos2Index PossibleMoves.I}} < 100 then %ici
-    %             SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
-    %         end
-    %     end
+    fun {SafestPlaceOrRandom PossibleMoves Map}
+        SafestMoves = {Cell.new safePlaces()}
+    in
+        for I in 1..{Record.width PossibleMoves} do
+            if @{List.nth Map {Pos2Index PossibleMoves.I}} < 100 then 
+                SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
+            end
+        end
         
-    %     if {Record.width @SafestMoves} == 1 then
-    %         {Show onlyOneSafeMove#@SafestMoves}
-    %         (@SafestMoves).1
-    %     elseif {Record.width @SafestMoves} > 1 then % choseBestSafePlace
-    %         (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
-    %     else % choseLessDangerousPlace
-    %         (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
-    %     end
-    % end
-
-    % fun {RandLocation Map Option1 Option2}
-    %     if {Rand} mod 2 == 0 then
-    %         Option1
-    %     else
-    %         Option2
-    %     end
-    %     % if @{List.nth Map {Pos2Index Option1}} > @{List.nth Map {Pos2Index Option2}} then
-    %     %     Option1
-    %     % else
-    %     %     Option2
-    %     % end
-    % end
+        if {Record.width @SafestMoves} == 1 then (@SafestMoves).1
+        elseif {Record.width @SafestMoves} > 1 then % Random between safe places
+            (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
+        else % choseLessDangerousPlace
+            (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
+        end
+    end
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs}
         MaximumDistance = 2*Input.fire
@@ -242,7 +227,7 @@ define
         elseif BestMovesForObjective.boxPoint.move \= 0 andthen BestMovesForObjective.boxPoint.dist \= 1 then
             BestMovesForObjective.boxPoint.move                 
         else
-            PossibleMoves.(({Rand} mod {Record.width PossibleMoves}) + 1) %random
+            {SafestPlaceOrRandom PossibleMoves Map}
         end
     end
 
