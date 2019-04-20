@@ -192,42 +192,46 @@ define
         GetID = ID
     end
 
-    fun {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers}
-        SafestMoves = {Cell.new safePlaces()}
-    in
-        for I in 1..{Record.width PossibleMoves} do
-            if @{List.nth Map {Pos2Index PossibleMoves.I}} < 100 then %ici
-                SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
-            end
-        end
+    % fun {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers}
+    %     SafestMoves = {Cell.new safePlaces()}
+    % in
+    %     for I in 1..{Record.width PossibleMoves} do
+    %         if @{List.nth Map {Pos2Index PossibleMoves.I}} < 100 then %ici
+    %             SafestMoves := {Tuple.append add(PossibleMoves.I) @SafestMoves}
+    %         end
+    %     end
         
-        if {Record.width @SafestMoves} == 1 then
-            {Show onlyOneSafeMove#@SafestMoves}
-            (@SafestMoves).1
-        elseif {Record.width @SafestMoves} > 1 then % choseBestSafePlace
-            (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
-        else % choseLessDangerousPlace
-            (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
-        end
-    end
+    %     if {Record.width @SafestMoves} == 1 then
+    %         {Show onlyOneSafeMove#@SafestMoves}
+    %         (@SafestMoves).1
+    %     elseif {Record.width @SafestMoves} > 1 then % choseBestSafePlace
+    %         (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
+    %     else % choseLessDangerousPlace
+    %         (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
+    %     end
+    % end
 
-    fun {RandLocation Map Option1 Option2}
-        if {Rand} mod 2 == 0 then
-            Option1
-        else
-            Option2
-        end
-        % if @{List.nth Map {Pos2Index Option1}} > @{List.nth Map {Pos2Index Option2}} then
-        %     Option1
-        % else
-        %     Option2
-        % end
-    end
+    % fun {RandLocation Map Option1 Option2}
+    %     if {Rand} mod 2 == 0 then
+    %         Option1
+    %     else
+    %         Option2
+    %     end
+    %     % if @{List.nth Map {Pos2Index Option1}} > @{List.nth Map {Pos2Index Option2}} then
+    %     %     Option1
+    %     % else
+    %     %     Option2
+    %     % end
+    % end
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs} %Pos = pos du bomber mais pas cell
         MaximumDistance = 2*Input.fire
-        BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance PossibleMoves}
-    in 
+        BestMovesForObjective
+    in
+        if @{List.nth Map {Pos2Index Pos}} > 100 then % si l'endroit ou il est n'est pas safe --> continue de propager --> cherche evasion
+            BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance PossibleMoves false} %AvoidDanger = false --> voir meilleur chemin meme si danger
+        else BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance PossibleMoves true} %AvoidDanger = true --> evite toute possibilite de danger
+        end
         {Show bestMovesForObjective#BestMovesForObjective}
         %choix de tactique ici
         %pour le moment prend pas en compte les PossibleMoves --> pris dans GoNearestAll
@@ -239,6 +243,7 @@ define
         %2) : si dist==1 d'une box --> boom
         %3) : bonus puis point puis boxbonus puis boxpoint
 
+        %si il n'y a pas de reponse c'est que le danger est partout --> sait pas aller a un safePlace plus loin!
         if @{List.nth Map {Pos2Index Pos}} > 100 andthen BestMovesForObjective.safePlace.move \= 0 then %danger --> 1) safePlace
             {Show chooseSafePlace}
             BestMovesForObjective.safePlace.move
@@ -248,16 +253,18 @@ define
             BestMovesForObjective.bonus.move
         elseif BestMovesForObjective.point.move \= 0 then 
             BestMovesForObjective.point.move
-        elseif BestMovesForObjective.boxBonus.move \= 0 then
+        elseif BestMovesForObjective.boxBonus.move \= 0 andthen BestMovesForObjective.boxBonus.dist \= 1 then
             BestMovesForObjective.boxBonus.move                 
-        elseif BestMovesForObjective.boxPoint.move \= 0 then 
+        elseif BestMovesForObjective.boxPoint.move \= 0 andthen BestMovesForObjective.boxPoint.dist \= 1 then
             BestMovesForObjective.boxPoint.move                 
         else
             %a voir ce qu'on veut! 
+            %attention les morts sont en pt(-1 -1)!! 
             %GoPlayer = {GoNearestPlayer Pos SafestMoves PosPlayers} in %safestMove >2 --> d'office \=0?
             %if GoPlayer == 0 then {Show error#noNearestPlayer} end
             %GoPlayer 
-            {ComputeSafestPlace {Cell.new Pos} PossibleMoves Map PosPlayers} %a optimiser cell.new
+            PossibleMoves.(({Rand} mod {Record.width PossibleMoves}) + 1) %random
+            %{ComputeSafestPlace {Cell.new Pos} PossibleMoves Map PosPlayers} %a optimiser cell.new
         end
         %return type pt(x:(@BomberPos).x+1 y:(@BomberPos).y)
     end
@@ -280,9 +287,10 @@ define
     %     @(Nearest).move
     % end
 
-    fun {GoNearestAll Map Pos MaximumDistance PossibleMoves}
+    fun {GoNearestAll Map Pos MaximumDistance PossibleMoves AvoidDanger}
         InitialDist = Input.nbRow+Input.nbColumn+1
         Nearest = {Cell.new near(boxPoint:bP(dist:InitialDist pos:0 move:0) boxBonus:bB(dist:InitialDist pos:1 move:0) point:p(dist:InitialDist pos:0 move:0) bonus:b(dist:InitialDist pos:0 move:0) safePlace:sP(dist:InitialDist pos:0 move:0))} 
+        
         proc {Propagate Dir Pos MaxDist FirstMove} %MaxDist pour pas qu'il traverse toute la map pour une box
             if MaxDist > 0 then
                 NewPos FoundBoxPoint FoundBoxBonus FoundPoint FoundBonus FoundSafePlace in
@@ -509,6 +517,10 @@ define
                 true % -->continue trying
             end
         end
+        MapValueNorth = @{List.nth Map {Pos2Index 'pt'(x:Pos.x y:Pos.y-1)}}
+        MapValueEast = @{List.nth Map {Pos2Index 'pt'(x:Pos.x+1 y:Pos.y)}}
+        MapValueSouth = @{List.nth Map {Pos2Index 'pt'(x:Pos.x y:Pos.y+1)}}
+        MapValueWest = @{List.nth Map {Pos2Index 'pt'(x:Pos.x-1 y:Pos.y)}}
     in
         % for I in 1.. {Record.width PossibleMoves} do 
             % {Show possibleMoves#PossibleMoves.I}
@@ -521,10 +533,19 @@ define
             % else {Show 'ERROR : PossibleMoves not in the proposed points'}
             % end
         % end
-        {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}
-        {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)}
-        {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)}
-        {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)}
+
+        %on se propage si pas de danger ou box (car si box en danger on s'en fout et doit venir dans le compte pour la boomer) 
+        if AvoidDanger == true then 
+            if MapValueNorth < 100 orelse MapValueNorth mod 10 == 3 orelse MapValueNorth mod 10 == 2 then {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)} end
+            if MapValueEast < 100 orelse MapValueEast mod 10 == 3 orelse MapValueEast mod 10 == 2 then {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)} end
+            if MapValueSouth < 100 orelse MapValueSouth mod 10 == 3 orelse MapValueSouth mod 10 == 2 then {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)} end
+            if MapValueWest < 100 orelse MapValueWest mod 10 == 3 orelse MapValueWest mod 10 == 2 then {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)} end
+        else 
+            {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}
+            {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)}
+            {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)}
+            {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)}
+        end
         @Nearest
         %bestmoves(boxPoint:(@Nearest).boxPoint.move boxBonus:(@Nearest).boxBonus.move point:(@Nearest).point.move bonus:(@Nearest).bonus.move)
         %Ainsi si move renvoie 0 c'est que il n'y a pas de ce qu'on cherche dans MaximumDistance+1 cases
@@ -633,9 +654,10 @@ in
                 end
             [] info(Message) then
                 case Message of nil then skip
-                [] spawnPlayer(ID Pos) then
+                [] spawnPlayer(ID Pos) then %tant que pas d'extension ok 
                     (PosPlayers.(ID.id).pos) := Pos
-                [] movePlayer(ID Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
+                [] movePlayer(ID Pos) then 
+                    MapValue = @{List.nth Map {Pos2Index Pos}} in
                     if MapValue mod 10 == 5 then % point
                         {List.nth Map {Pos2Index Pos}} := MapValue - 5
                     elseif MapValue mod 10 == 6 then % bonus

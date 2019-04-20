@@ -210,7 +210,6 @@ in
          ColorsList.I = {List.nth Input.colorsBombers X}
          TakenIndex.X = I
       end
-      {Show TakenIndex}
    end
 
    % initialize bombers
