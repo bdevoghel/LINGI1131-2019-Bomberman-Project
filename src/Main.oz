@@ -12,6 +12,8 @@ import
    Application(exit:Exit)
    OS(rand:Rand pipe:Pipe)
 define
+   BombersList
+   ColorsList
    Board
    Bombers
    PortBombers
@@ -185,10 +187,36 @@ in
    NotificationM = {NotificationManager.initialize Board PortBombers MapM}
    MapM = {MapManager.initialize Board PortBombers NotificationM}
 
+   % randomize order of players
+   local
+      N = Input.nbBombers 
+      TakenIndex = {MakeTuple '#' N}
+      fun {ValidRandom Max}
+         R = ({Rand} mod Max) + 1
+      in
+         if {Value.isFree TakenIndex.R} then
+            R
+         else
+            {ValidRandom Max}
+         end
+      end
+   in
+      BombersList = {MakeTuple '#' N}
+      ColorsList = {MakeTuple '#' N}
+      for I in 1..N do 
+         X = {ValidRandom N} 
+      in
+         BombersList.I = {List.nth Input.bombers X}
+         ColorsList.I = {List.nth Input.colorsBombers X}
+         TakenIndex.X = I
+      end
+      {Show TakenIndex}
+   end
+
    % initialize bombers
    for I in 1..Input.nbBombers do
-      Bombers.I = bomber(id:I color:{List.nth Input.colorsBombers I} name:{List.nth Input.bombers I})
-      PortBombers.I = {PlayerManager.playerGenerator {List.nth Input.bombers I} Bombers.I}
+      Bombers.I = bomber(id:I color:ColorsList.I name:BombersList.I)
+      PortBombers.I = {PlayerManager.playerGenerator BombersList.I Bombers.I}
    end
 
    % initialize players on board

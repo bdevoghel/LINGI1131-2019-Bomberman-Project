@@ -204,24 +204,10 @@ define
         if {Record.width @SafestMoves} == 1 then
             {Show onlyOneSafeMove#@SafestMoves}
             (@SafestMoves).1
-        elseif {Record.width @SafestMoves} > 1 then Best = {Cell.new (@SafestMoves).2} in % choseBestSafePlace
-            for I in 1..{Record.width @SafestMoves} do
-                if (@SafestMoves).I \= @BomberPos then
-                    Best := {RandLocation Map (@SafestMoves).I @Best}
-                end
-            end
-            
-            %Best := {Best @BomberPos @SafestMoves PosPlayers Map} %rien n'est dangereux --> peut rester a son endroit et mettre une bombe
-            
-            {Show choseBestSafePlace#@Best}
-            %{Show choseBestSafePlaceForOBJECTIVE#@Best}
-            @Best
-        else Best = {Cell.new PossibleMoves.1} in % choseLessDangerousPlace
-            for I in 2..{Record.width PossibleMoves} do
-                Best := {RandLocation Map PossibleMoves.I @Best}
-            end
-            {Show choseLessDangerousPlace#@Best}
-            @Best
+        elseif {Record.width @SafestMoves} > 1 then % choseBestSafePlace
+            (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
+        else % choseLessDangerousPlace
+            (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
         end
     end
 
