@@ -20,7 +20,7 @@ export
 define
    IsTurnByTurn UseExtention PrintOK
    NbRow NbColumn Map
-   NbBombers Bombers ColorBombers
+   NbBombers Bombers ColorsBombers
    NbLives NbBombs
    ThinkMin ThinkMax
    TimingBomb TimingBombMin TimingBombMax Fire

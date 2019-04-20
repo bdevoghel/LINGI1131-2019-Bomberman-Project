@@ -271,7 +271,7 @@ in
                 else
                     GetID = null
                     Result = null
-                    ShieldOn = false
+                    ShieldOn := false
                 end
             [] info(Message) then
                 case Message of nil then skip
