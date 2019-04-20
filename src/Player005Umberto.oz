@@ -118,7 +118,7 @@ define
             end
             {Show ' '}
         end
-        {Delay 2000}
+        {Delay 1000}
         {DebugMap Map}
     end
 
@@ -240,7 +240,7 @@ define
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs} %Pos = pos du bomber mais pas cell
         MaximumDistance = 2*Input.fire
-        BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance}
+        BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance PossibleMoves}
     in 
         {Show bestMovesForObjective#BestMovesForObjective}
         %choix de tactique ici
@@ -254,8 +254,9 @@ define
         %3) : bonus puis point puis boxbonus puis boxpoint
 
         if @{List.nth Map {Pos2Index Pos}} > 100 andthen BestMovesForObjective.safePlace.move \= 0 then %danger --> 1) safePlace
-                BestMovesForObjective.safePlace.move
-        elseif BestMovesForObjective.boxBonus.dist == 1 andthen @NbBombs > 0 then Pos % 2) BOOM
+            {Show chooseSafePlace}
+            BestMovesForObjective.safePlace.move
+        elseif BestMovesForObjective.boxBonus.dist == 1 andthen @NbBombs > 0 then Pos % 2) BOOM %faut mettre sur meme point egalite boxPoint --> orelse 
         elseif BestMovesForObjective.boxPoint.dist == 1 andthen @NbBombs > 0 then Pos
         elseif BestMovesForObjective.bonus.move \= 0 then 
             BestMovesForObjective.bonus.move
@@ -293,7 +294,7 @@ define
     %     @(Nearest).move
     % end
 
-    fun {GoNearestAll Map Pos MaximumDistance}
+    fun {GoNearestAll Map Pos MaximumDistance PossibleMoves}
         InitialDist = Input.nbRow+Input.nbColumn+1
         Nearest = {Cell.new near(boxPoint:bP(dist:InitialDist pos:0 move:0) boxBonus:bB(dist:InitialDist pos:1 move:0) point:p(dist:InitialDist pos:0 move:0) bonus:b(dist:InitialDist pos:0 move:0) safePlace:sP(dist:InitialDist pos:0 move:0))} 
         proc {Propagate Dir Pos MaxDist FirstMove} %MaxDist pour pas qu'il traverse toute la map pour une box
@@ -523,7 +524,18 @@ define
             end
         end
     in
-        {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}  %difference entre 'pt'() et pt()??
+        % for I in 1.. {Record.width PossibleMoves} do 
+            % {Show possibleMoves#PossibleMoves.I}
+            % {Show actualPos#Pos}
+            % if PossibleMoves.I == pt(x:Pos.x y:Pos.y-1) then {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}
+            % elseif PossibleMoves.I == pt(x:Pos.x+1 y:Pos.y) then {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)}
+            % elseif PossibleMoves.I == pt(x:Pos.x y:Pos.y+1) then {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)}
+            % elseif PossibleMoves.I == pt(x:Pos.x-1 y:Pos.y) then {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)}
+            % elseif PossibleMoves.I == pt(x:Pos.x y:Pos.y) then skip %si il peut rester sur place
+            % else {Show 'ERROR : PossibleMoves not in the proposed points'}
+            % end
+        % end
+        {Propagate north Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y-1)}
         {Propagate east Pos MaximumDistance 'pt'(x:Pos.x+1 y:Pos.y)}
         {Propagate south Pos MaximumDistance 'pt'(x:Pos.x y:Pos.y+1)}
         {Propagate west Pos MaximumDistance 'pt'(x:Pos.x-1 y:Pos.y)}
