@@ -45,7 +45,7 @@ define
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
-            {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})+100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+            {List.nth Map {Pos2Index PosExplosions.I}} := MapValue + 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
         end
     end
     proc {ComputeNoDangerZone Map Pos}
@@ -56,7 +56,7 @@ define
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
         in  %ok si simultane, sinon thinkmin/max?!!!
             if MapValue >= 100 then 
-                {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})-100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+                {List.nth Map {Pos2Index PosExplosions.I}} := MapValue - 100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
             end
         end
     end
@@ -638,8 +638,6 @@ in
                         {List.nth Map {Pos2Index Pos}} := MapValue - 5
                     elseif MapValue mod 10 == 6 then % bonus
                         {List.nth Map {Pos2Index Pos}} := MapValue - 6
-                    else
-                        {Show 'ERROR : box removed where no box was'#Pos}
                     end
                     (PosPlayers.(ID.id).pos) := Pos
                 [] deadPlayer(ID) then
@@ -647,9 +645,7 @@ in
                 [] bombPlanted(Pos) then
                     {ComputeDangerZone Map Pos}
                 [] bombExploded(Pos) then
-                    {Show 'Bomb exploded at'#Pos#'(information to treat)'}
                     {ComputeNoDangerZone Map Pos}
-                    skip % TODO : bombExploded
                 [] boxRemoved(Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
                     if MapValue == 2 then % box with point
                         {List.nth Map {Pos2Index Pos}} := 5
