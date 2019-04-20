@@ -633,9 +633,15 @@ in
                 case Message of nil then skip
                 [] spawnPlayer(ID Pos) then
                     (PosPlayers.(ID.id).pos) := Pos
-                [] movePlayer(ID Pos) then
+                [] movePlayer(ID Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
+                    if MapValue mod 10 == 5 then % point
+                        {List.nth Map {Pos2Index Pos}} := MapValue - 5
+                    elseif MapValue mod 10 == 6 then % bonus
+                        {List.nth Map {Pos2Index Pos}} := MapValue - 6
+                    else
+                        {Show 'ERROR : box removed where no box was'#Pos}
+                    end
                     (PosPlayers.(ID.id).pos) := Pos
-                    {List.nth Map {Pos2Index Pos}} := @{List.nth Map {Pos2Index Pos}} - @{List.nth Map {Pos2Index Pos}} mod 10 % TODO : ne marche pas si triche !!
                 [] deadPlayer(ID) then
                     (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
                 [] bombPlanted(Pos) then
