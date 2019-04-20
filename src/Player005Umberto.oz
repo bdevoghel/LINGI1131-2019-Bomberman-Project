@@ -86,10 +86,10 @@ define
         fun {ValidFlamePosition NewPos ?ToBeContinued}
             MapValue =  @{List.nth Map {Pos2Index NewPos}}
         in
-            if MapValue == 1 then % wall
+            if MapValue mod 10 == 1 then % wall
                 ToBeContinued = false
                 false
-            elseif MapValue == 2 orelse MapValue == 3 then % box
+            elseif MapValue mod 10 == 2 orelse MapValue mod 10 == 3 then % box
                 ToBeContinued = false
                 true
             else 
@@ -606,19 +606,15 @@ in
             [] add(Type Option ?Result) then
                 case Type of nil then skip
                 [] bomb then
-                    {List.nth Map {Pos2Index @BomberPos}} := 0 %POUR LE MOMENT MODIF QUE LES SIENS -5!!
                     NbBombs := @NbBombs + Option
                     Result = @NbBombs
                 [] point then
-                    {List.nth Map {Pos2Index @BomberPos}} := 0
                     NbPoints := @NbPoints + Option
                     Result = @NbPoints
                 [] life then
-                    {List.nth Map {Pos2Index @BomberPos}} := 0
                     NbLives := @NbLives + Option
                     Result = @NbLives
                 [] shield then
-                    {List.nth Map {Pos2Index @BomberPos}} := 0
                     ShieldOn := true
                     Result = @ShieldOn
                 end
