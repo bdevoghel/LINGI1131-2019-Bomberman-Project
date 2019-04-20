@@ -44,10 +44,19 @@ define
         % TODO : update map properly
         for I in 1..{Record.width PosExplosions} do
             MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
-        in
-            if MapValue == 0 then
-            %ok si simultane, sinon thinkmin/max?
-                {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})+100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+        in  %ok si simultane, sinon thinkmin/max?!!!
+            {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})+100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
+        end
+    end
+    proc {ComputeNoDangerZone Map Pos}
+        PosExplosions = {GetPosExplosions Map Pos Input.fire}
+    in
+        % TODO : update map properly
+        for I in 1..{Record.width PosExplosions} do
+            MapValue = @{List.nth Map {Pos2Index PosExplosions.I}}
+        in  %ok si simultane, sinon thinkmin/max?!!!
+            if MapValue >= 100 then 
+                {List.nth Map {Pos2Index PosExplosions.I}} := @({List.nth Map {Pos2Index PosExplosions.I}})-100*Input.timingBomb % TODO : quid bonus ? quid info precedente ? --> gardee
             end
         end
     end
@@ -222,7 +231,7 @@ define
     end
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs} %Pos = pos du bomber mais pas cell
-        MaximumDistance = Input.fire + 1
+        MaximumDistance = 2*Input.fire
         BestMovesForObjective = {GoNearestAll Map Pos MaximumDistance}
     in 
         {Show bestMovesForObjective#BestMovesForObjective}
@@ -556,7 +565,7 @@ in
         {InitMap Map}
         {InitPosPlayers PosPlayers}
 
-        % thread {DebugMap Map} end
+        thread {DebugMap Map} end
 
         Port
     end
@@ -632,6 +641,7 @@ in
                     {ComputeDangerZone Map Pos}
                 [] bombExploded(Pos) then
                     {Show 'Bomb exploded at'#Pos#'(information to treat)'}
+                    {ComputeNoDangerZone Map Pos}
                     skip % TODO : bombExploded
                 [] boxRemoved(Pos) then MapValue = @{List.nth Map {Pos2Index Pos}} in
                     if MapValue == 2 then % box with point
