@@ -8,7 +8,7 @@ export
    map:Map
    nbBombers:NbBombers
    bombers:Bombers
-   colorsBombers:ColorBombers
+   colorsBombers:ColorsBombers
    nbLives:NbLives
    nbBombs:NbBombs
    thinkMin:ThinkMin
@@ -57,8 +57,7 @@ in
 
    NbBombers = 3
    Bombers = [player000bomber player005Umberto player005Tozzi]
-   %Bombers = [player000bomber player005Umberto player005Umberto]
-   ColorBombers = [blue red green]
+   ColorsBombers = [blue red green]
 
 %%%% Parameters %%%%
 
