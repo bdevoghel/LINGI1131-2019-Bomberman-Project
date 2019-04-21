@@ -132,19 +132,8 @@ define
         else % has to choose between moves
             WhatToDo in
             WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
-            %{Show whatToDo#WhatToDo}
+            %{Show whatToDo#WhatToDo} %TODO verifier que plus aucun show present en commentaire
             {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
-            % if {Record.width PossibleMoves} == 2 andthen @NbBombs > 0 then % go back or bomb
-            %     {Show ID.id#executeAction#goBackOrBomb}
-            %     {DoAction @BomberPos ID BomberPos NbBombs GetID Action} % bomb
-            % else
-            %     WhatToDo in
-            %     WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
-            %     {Show whatToDo#WhatToDo}
-            %     {Show ID.id#executeAction#goToSafestPlace}
-            %     {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
-            %     %{DoAction {ComputeSafestPlace BomberPos PossibleMoves Map PosPlayers} ID BomberPos NbBombs GetID Action}
-            % end
         end
     end
 
