@@ -55,9 +55,12 @@ in
 
 %%%% Players description %%%%
 
+   % you can choose from : player000bomber player005Umberto player005Tozzi player003John player022smart player087Basic player087Bomber player087Keyboard player105Alex player105Alice
+
    NbBombers = 3
-   Bombers = [player000bomber player005Umberto player005Tozzi]
-   ColorsBombers = [blue green red]
+   Bombers = [player000bomber player005Tozzi player005Umberto]
+   % Bombers = [player005Umberto player087Keyboard]
+   ColorsBombers = [blue red green]
 
 %%%% Parameters %%%%
 
