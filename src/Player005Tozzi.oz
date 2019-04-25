@@ -3,7 +3,6 @@ import
     Input
     Projet2019util
     System(show:Show print:Print)
-    OS(rand:Rand)
 export
     portPlayer:StartPlayer
 define   
