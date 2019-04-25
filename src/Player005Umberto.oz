@@ -196,7 +196,7 @@ define
         elseif {Record.width @SafestMoves} > 1 then % Random between safe places
             (@SafestMoves).(({Rand} mod {Record.width @SafestMoves}) + 1)
         else % choseLessDangerousPlace
-            (@PossibleMoves).(({Rand} mod {Record.width @PossibleMoves}) + 1)
+            (PossibleMoves).(({Rand} mod {Record.width PossibleMoves}) + 1)
         end
     end
 
