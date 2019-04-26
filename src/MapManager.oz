@@ -107,7 +107,7 @@ define
             {List.nth Map {Index Pos.x Pos.y}} := 0
 
             if Input.useExtention then % TODO : implement extention
-                Bonus = {Rand} mod 3 
+                Bonus = {Rand} mod 4 
             in 
                 if Bonus == 0 then % wins 10 points
                     {Send NotificationM add(ID point 10 Result)}
@@ -117,6 +117,8 @@ define
                     {Send NotificationM add(ID bomb 1 Result)}
                 elseif Bonus == 2 then % wins shield
                     {Send NotificationM add(ID shield 1 Result)}
+                elseif Bonus == 3 then % wins shield
+                    {Send NotificationM add(ID life 1 Result)}
                 else
                     {Show 'ERROR : unknown bonus'#Bonus}
                 end

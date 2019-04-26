@@ -102,6 +102,7 @@ define
     end
 
     proc {DebugMap Map}
+        {Show '----------------------------------------------------------------------------------------------------------------------'}
         M = {Cell.new Map} in 
         for Y in 1..Input.nbRow do
             for X in 1..Input.nbColumn do Val = @(@M.1) in
@@ -114,8 +115,7 @@ define
             end
             {Show ' '}
         end
-        {Delay 1000}
-        {DebugMap Map}
+        {Show '----------------------------------------------------------------------------------------------------------------------'}
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,7 +190,7 @@ define
     end
 
     fun{Best Pos PossibleMoves PosPlayers Map NbBombs}
-        MaximumDistance = 2*Input.fire
+        MaximumDistance = 3*Input.fire
         BestMovesForObjective
     in
         if @{List.nth Map {Pos2Index Pos}} > 100 then 
@@ -485,8 +485,6 @@ in
         {InitMap Map}
         {InitPosPlayers PosPlayers}
 
-        %thread {DebugMap Map} end
-
         Port
     end
    
@@ -518,6 +516,7 @@ in
                     GetID = null
                     Action = null
                 end
+                % {DebugMap Map}
             [] add(Type Option ?Result) then
                 case Type of nil then skip
                 [] bomb then

@@ -11,6 +11,7 @@ import
    Player087Keyboard
    Player105Alex
    Player105Alice
+   Player021IA2
 export
    playerGenerator:PlayerGenerator
 define
@@ -30,6 +31,7 @@ in
       [] player087Keyboard then {Player087Keyboard.portPlayer ID}
       [] player105Alex then {Player105Alex.portPlayer ID}
       [] player105Alice then {Player105Alice.portPlayer ID}
+      [] player021IA2 then {Player021IA2.portPlayer ID}
       else
          raise 
             unknownedPlayer('Player not recognized by the PlayerManager '#Kind)
