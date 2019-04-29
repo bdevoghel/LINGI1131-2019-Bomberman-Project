@@ -6,7 +6,6 @@
 
 
 all:
-	@make -s clean
 	@make -s compile
 	@make -s compilePlayers
 	@make -s compileInput

@@ -2,7 +2,7 @@ functor
 import
     Input
     Projet2019util
-    System(show:Show print:Print)
+    System(show:Show)
 export
     portPlayer:StartPlayer
 define   
@@ -28,25 +28,6 @@ define
         Pos.x + ((Pos.y-1) * Input.nbColumn)
     end
 
-    proc {DebugMap Map}
-        M = {Cell.new Map} in 
-        for Y in 1..Input.nbRow do
-            for X in 1..Input.nbColumn do Val = @(@M.1) in
-                if Val < 0 then {Print Val} {Print ' '}
-                elseif Val > 9 then {Print ' '} {Print Val} {Print ' '}
-                else {Print '  '} {Print Val} {Print '  '}
-                end
-
-                M := @M.2
-            end
-            {Show ' '}
-        end
-        {Delay 1000}
-        {DebugMap Map}
-    end
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
     proc {ExecuteAction ID BomberPos Map NbBombs ?GetID ?Action}
         PossibleMoves = {GetPossibleMoves Map NbBombs BomberPos} % tuple of where the bomber could move (or bomb if current position)
         Move = {Cell.new PossibleMoves.1}
@@ -66,8 +47,6 @@ define
         end
         {DoAction @Move ID BomberPos NbBombs ?GetID ?Action}
     end
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     fun {GetPossibleMoves Map NbBombs BomberPos}
         Candidates
@@ -121,8 +100,12 @@ in
         Map
         PosPlayers
     in
-        thread
-            OutputStream = {Projet2019util.portPlayerChecker 'Tozzi' ID Stream}
+        if Input.useExtention then
+            OutputStream = Stream
+        else
+            thread
+                OutputStream = {Projet2019util.portPlayerChecker 'Tozzi' ID Stream}
+            end
         end
         {NewPort Stream Port}
         thread
@@ -138,8 +121,6 @@ in
         ShieldOn = {Cell.new false}
 
         {InitMap Map}
-
-        % thread {DebugMap Map} end
 
         Port
     end
@@ -185,7 +166,7 @@ in
                     Result = @NbLives
                 [] shield then
                     ShieldOn := true
-                    Result = @ShieldOn
+                    Result = @NbLives
                 end
             [] gotHit(?GetID ?Result) then
                 if {Not @ShieldOn} andthen @State == on then
@@ -194,9 +175,15 @@ in
                     Result = death(@NbLives)
                     State := off
                 else
-                    GetID = null
-                    Result = null
-                    ShieldOn := false
+                    if @ShieldOn then
+                        GetID = ID
+                        Result = shield(@NbLives)
+                        ShieldOn := false
+                    else
+                        GetID = null
+                        Result = null
+                        ShieldOn := false
+                    end
                 end
             [] info(Message) then
                 case Message of nil then skip

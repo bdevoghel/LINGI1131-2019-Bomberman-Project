@@ -2,7 +2,7 @@ functor
 import
     Input
     Projet2019util
-    System(show:Show print:Print)
+    System(show:Show) % add print:Print if DebugMap used
     OS(rand:Rand)
 export
     portPlayer:StartPlayer
@@ -17,14 +17,11 @@ define
         Map = {List.make Input.nbRow*Input.nbColumn}
         for X in 1..Input.nbColumn do
             for Y in 1..Input.nbRow do
-                {List.nth Map {Index X Y}} = {Cell.new ({List.nth {List.nth Input.map Y} X} mod 4)} % mod 4 is for spawnFloor == floor
+                {List.nth Map {Pos2Index pos(x:X y:Y)}} = {Cell.new ({List.nth {List.nth Input.map Y} X} mod 4)} % mod 4 is for spawnFloor == floor
             end
         end
     end
 
-    fun {Index X Y}
-        X + ((Y-1) * Input.nbColumn)
-    end
     fun {Pos2Index Pos} % Pos :: pt(x:X y:Y)
         Pos.x + ((Pos.y-1) * Input.nbColumn)
     end
@@ -101,24 +98,22 @@ define
         @Positions
     end
 
-    proc {DebugMap Map}
-        {Show '----------------------------------------------------------------------------------------------------------------------'}
-        M = {Cell.new Map} in 
-        for Y in 1..Input.nbRow do
-            for X in 1..Input.nbColumn do Val = @(@M.1) in
-                if Val < 0 then {Print Val} {Print ' '}
-                elseif Val > 9 then {Print ' '} {Print Val} {Print ' '}
-                else {Print '  '} {Print Val} {Print '  '}
-                end
+    % proc {DebugMap Map}
+    %     {Show '----------------------------------------------------------------------------------------------------------------------'}
+    %     M = {Cell.new Map} in 
+    %     for Y in 1..Input.nbRow do
+    %         for X in 1..Input.nbColumn do Val = @(@M.1) in
+    %             if Val < 0 then {Print Val} {Print ' '}
+    %             elseif Val > 9 then {Print ' '} {Print Val} {Print ' '}
+    %             else {Print '  '} {Print Val} {Print '  '}
+    %             end
 
-                M := @M.2
-            end
-            {Show ' '}
-        end
-        {Show '----------------------------------------------------------------------------------------------------------------------'}
-    end
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %             M := @M.2
+    %         end
+    %         {Show ' '}
+    %     end
+    %     {Show '----------------------------------------------------------------------------------------------------------------------'}
+    % end
 
     proc {ExecuteAction ID BomberPos Map NbBombs PosPlayers ?GetID ?Action}
         PossibleMoves = {GetPossibleMoves Map NbBombs BomberPos} % tuple of where the bomber could move (or bomb if current position)
@@ -130,14 +125,11 @@ define
                 {Show 'ERROR : bomber has nowhere to move'#ID} %normalement il peut toujours revenir d'ou il vient!
             end
         else % has to choose between moves
-            WhatToDo in
-            WhatToDo = {Best @BomberPos PossibleMoves PosPlayers Map NbBombs}
-            %{Show whatToDo#WhatToDo} %TODO verifier que plus aucun show present en commentaire
-            {DoAction WhatToDo ID BomberPos NbBombs GetID Action} %ici choix prefere
+            Best = {GetBest @BomberPos PossibleMoves PosPlayers Map NbBombs}
+        in
+            {DoAction Best ID BomberPos NbBombs GetID Action} %ici choix prefere
         end
     end
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     fun {GetPossibleMoves Map NbBombs BomberPos}
         Candidates
@@ -189,7 +181,7 @@ define
         end
     end
 
-    fun{Best Pos PossibleMoves PosPlayers Map NbBombs}
+    fun{GetBest Pos PossibleMoves PosPlayers Map NbBombs}
         MaximumDistance = 3*Input.fire
         BestMovesForObjective
     in
@@ -466,8 +458,12 @@ in
         Map
         PosPlayers
     in
-        thread
-            OutputStream = {Projet2019util.portPlayerChecker 'Umberto' ID Stream}
+        if Input.useExtention then
+            OutputStream = Stream
+        else
+            thread
+                OutputStream = {Projet2019util.portPlayerChecker 'Umberto' ID Stream}
+            end
         end
         {NewPort Stream Port}
         thread
@@ -516,7 +512,6 @@ in
                     GetID = null
                     Action = null
                 end
-                % {DebugMap Map}
             [] add(Type Option ?Result) then
                 case Type of nil then skip
                 [] bomb then
@@ -530,7 +525,7 @@ in
                     Result = @NbLives
                 [] shield then
                     ShieldOn := true
-                    Result = @ShieldOn
+                    Result = @NbLives
                 end
             [] gotHit(?GetID ?Result) then
                 if {Not @ShieldOn} andthen @State == on then
@@ -539,13 +534,19 @@ in
                     Result = death(@NbLives)
                     State := off
                 else
-                    GetID = null
-                    Result = null
-                    ShieldOn := false
+                    if @ShieldOn then
+                        GetID = ID
+                        Result = shield(@NbLives)
+                        ShieldOn := false
+                    else
+                        GetID = null
+                        Result = null
+                        ShieldOn := false
+                    end
                 end
             [] info(Message) then
                 case Message of nil then skip
-                [] spawnPlayer(ID Pos) then % TODO : tant que pas d'extension ok 
+                [] spawnPlayer(ID Pos) then
                     (PosPlayers.(ID.id).pos) := Pos
                 [] movePlayer(ID Pos) then 
                     MapValue = @{List.nth Map {Pos2Index Pos}} in

@@ -1,7 +1,7 @@
 functor
 import
     Input
-    System(show:Show print:Print)
+    System(show:Show)
     BombManager(getPosExplosions:GetPosExplosions)
 
     OS(rand:Rand)
@@ -18,33 +18,21 @@ define
 
     NbBoxesLeft
 
-    proc {DebugMap}
-        M = {Cell.new Map} in 
-        for Y in 1..Input.nbRow do
-            for X in 1..Input.nbColumn do
-                {Print @(@M.1)}
-                M := @M.2
-            end
-            {Show ' '}
-        end
-        {Delay 10000}
-    end
-
     proc {InitMap}
         NbBoxesLeft = {Cell.new 0}
         Map = {List.make Input.nbRow*Input.nbColumn}
         for X in 1..Input.nbColumn do
             for Y in 1..Input.nbRow do
-                {List.nth Map {Index X Y}} = {Cell.new {List.nth {List.nth Input.map Y} X}}
-                if @{List.nth Map {Index X Y}} == 2 orelse @{List.nth Map {Index X Y}} == 3 then
+                {List.nth Map {Pos2Index pos(x:X y:Y)}} = {Cell.new {List.nth {List.nth Input.map Y} X}}
+                if @{List.nth Map {Pos2Index pos(x:X y:Y)}} == 2 orelse @{List.nth Map {Pos2Index pos(x:X y:Y)}} == 3 then
                     NbBoxesLeft := @NbBoxesLeft + 1
                 end
             end
         end
     end
 
-    fun {Index X Y}
-        X + ((Y-1) * Input.nbColumn)
+    fun {Pos2Index Pos} % Pos :: pt(x:X y:Y)
+        Pos.x + ((Pos.y-1) * Input.nbColumn)
     end
 
     proc {InitPosPlayers PortBombers}
@@ -64,12 +52,16 @@ define
                 in
                     {Send PosPlayers.PP.port gotHit(ID Result)}
                     if Result \= null then
-                        death(NewLife) = Result
-                        {Send Gui lifeUpdate(ID NewLife)}
-                        (PosPlayers.(ID.id).lives) := NewLife
-                        {Send Gui hidePlayer(ID)}
-                        {Send NotificationM deadPlayer(ID)} % notify everyone
-                        (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
+                        case Result
+                        of death(NewLife) then
+                            {Send Gui lifeUpdate(ID NewLife)}
+                            (PosPlayers.(ID.id).lives) := NewLife
+                            {Send Gui hidePlayer(ID)}
+                            {Send NotificationM deadPlayer(ID)} % notify everyone
+                            (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
+                        [] shield(NewLife) then
+                            skip % player uses shield
+                        end
                     else 
                         {Show 'ERROR : result in gotHit(ID Result) == null'}
                     end
@@ -79,7 +71,7 @@ define
     end
 
     fun {ValidFlamePosition NewPos ?ToBeContinued} % same as in BombManager but synchronous with MapManager (otherwise blocks call)
-        MapValue =  @{List.nth Map {Index NewPos.x NewPos.y}}
+        MapValue =  @{List.nth Map {Pos2Index NewPos}}
     in
         if MapValue == 1 then % wall
             ToBeContinued = false
@@ -95,16 +87,16 @@ define
 
     proc {ExecuteMove ID Pos} Result in 
         (PosPlayers.(ID.id).pos) := Pos
-        if @{List.nth Map {Index Pos.x Pos.y}} == 5 then % walks on point
+        if @{List.nth Map {Pos2Index Pos}} == 5 then % walks on point
             {Send Gui hidePoint(Pos)}
-            {List.nth Map {Index Pos.x Pos.y}} := 0
+            {List.nth Map {Pos2Index Pos}} := 0
 
             {Send NotificationM add(ID point 1 Result)}
             {Wait Result}
             {Send Gui scoreUpdate(ID Result)}
-        elseif @{List.nth Map {Index Pos.x Pos.y}} == 6 then % walks on bonus
+        elseif @{List.nth Map {Pos2Index Pos}} == 6 then % walks on bonus
             {Send Gui hideBonus(Pos)}
-            {List.nth Map {Index Pos.x Pos.y}} := 0
+            {List.nth Map {Pos2Index Pos}} := 0
 
             if Input.useExtention then % TODO : implement extention
                 Bonus = {Rand} mod 4 
@@ -117,7 +109,7 @@ define
                     {Send NotificationM add(ID bomb 1 Result)}
                 elseif Bonus == 2 then % wins shield
                     {Send NotificationM add(ID shield 1 Result)}
-                elseif Bonus == 3 then % wins shield
+                elseif Bonus == 3 then % wins life
                     {Send NotificationM add(ID life 1 Result)}
                 else
                     {Show 'ERROR : unknown bonus'#Bonus}
@@ -165,28 +157,27 @@ in
             [] boxRemoved(_) then
                 NbBoxesLeft := @NbBoxesLeft - 1
             [] getMapValue(X Y ?MapValue) then
-                MapValue = @{List.nth Map {Index X Y}}
+                MapValue = @{List.nth Map {Pos2Index pos(x:X y:Y)}}
             [] getPlayerLives(ID ?NbLives) then
                 NbLives = @(PosPlayers.(ID.id).lives)
-            [] getPlayersAlive(?PlayersAlive) then PlayersNotDead = {Cell.new '#'()} in
+            [] getPlayersAlive(?PlayersAlive) then 
+                PlayersNotDead = {Cell.new '#'()}
+            in
                 for I in 1..Input.nbBombers do
                     if @(PosPlayers.I.lives) > 0 then PlayerID in
                         {Send PosPlayers.I.port getId(PlayerID)}
-                        % {Wait PlayerID}
                         PlayersNotDead := {Tuple.append otherPlayer(PlayerID) @PlayersNotDead}
                     end
                 end
                 PlayersAlive = @PlayersNotDead
             [] spawnPoint(Pos) then
                 {Send Gui spawnPoint(Pos)}
-                {List.nth Map {Index Pos.x Pos.y}} := 5
+                {List.nth Map {Pos2Index Pos}} := 5
             [] spawnBonus(Pos) then
                 {Send Gui spawnBonus(Pos)}
-                {List.nth Map {Index Pos.x Pos.y}} := 6
+                {List.nth Map {Pos2Index Pos}} := 6
             [] getNbBoxes(?NbBoxes) then
                 NbBoxes = @NbBoxesLeft
-            [] debugMap then
-                 thread {DebugMap} end
             end
             {TreatStream T}
         end

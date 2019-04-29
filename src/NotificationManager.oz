@@ -56,6 +56,7 @@ in
                 {Send MapM spawnBonus(Pos)}
             [] add(ID Type Option ?Result) then
                 {Send Players.(ID.id) add(Type Option Result)}
+                if Type == life then {Send Gui lifeUpdate(ID Result)} end
             end
             {TreatStream T}
         end

@@ -92,7 +92,7 @@ define
       end
 
       if {EndOfSimultaneous} then % loops in EndOfSimultaneous until end
-         StopPlayers := true
+         StopPlayers = true
          % find winner(s) with the most points
          {FindWinner}
       end
@@ -132,7 +132,7 @@ define
          end
       end
 
-      if {Not Input.isTurnByTurn} andthen {Not @StopPlayers} then
+      if {Not Input.isTurnByTurn} andthen {Value.isFree StopPlayers} then
          {Delay ({Rand} mod (Input.thinkMax - Input.thinkMin)) + Input.thinkMin}
          {ExecutePlayer I}
       end
@@ -244,7 +244,6 @@ in
       if Input.isTurnByTurn then
          WinnerId = {ExecuteTurnByTurn 0}
       else 
-         StopPlayers = {Cell.new false}
          WinnerId = {ExecuteSimultaneous}
       end
       {Send Board displayWinner(WinnerId)}
