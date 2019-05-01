@@ -48,7 +48,7 @@ define
         for I in 1..{Record.width PosExplosions} do 
             for PP in 1..{Record.width PosPlayers} do
                 if @(PosPlayers.PP.pos).x == PosExplosions.I.x andthen @(PosPlayers.PP.pos).y == PosExplosions.I.y then 
-                    ID Result NewLife 
+                    ID Result 
                 in
                     {Send PosPlayers.PP.port gotHit(ID Result)}
                     if Result \= null then
@@ -59,7 +59,7 @@ define
                             {Send Gui hidePlayer(ID)}
                             {Send NotificationM deadPlayer(ID)} % notify everyone
                             (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
-                        [] shield(NewLife) then
+                        [] shield(_) then
                             skip % player uses shield
                         end
                     else 
