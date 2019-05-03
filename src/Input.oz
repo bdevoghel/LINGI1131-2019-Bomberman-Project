@@ -29,7 +29,7 @@ in
 
 %%%% Style of game %%%%
    
-   IsTurnByTurn = false
+   IsTurnByTurn = true
    UseExtention = false
    PrintOK = false
 
@@ -57,9 +57,9 @@ in
 
    % you can choose from : player000bomber player005Umberto player005Tozzi player003John player087Bomber player087Keyboard player105Alice player038Luigi player007James
 
-   NbBombers = 2
-   % Bombers = [player000bomber player005Tozzi player005Umberto]
-   Bombers = [player005Umberto player003John] % for interoperability
+   NbBombers = 3
+   Bombers = [player000bomber player005Tozzi player005Umberto]
+   %Bombers = [player005Umberto player003John] % for interoperability
    ColorsBombers = [blue red green]
 
 %%%% Parameters %%%%
