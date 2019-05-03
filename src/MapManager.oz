@@ -13,7 +13,7 @@ define
 
     Gui
     Map
-    PosPlayers
+    InfoPlayers
     NotificationM
 
     NbBoxesLeft
@@ -35,9 +35,9 @@ define
         Pos.x + ((Pos.y-1) * Input.nbColumn)
     end
 
-    proc {InitPosPlayers PortBombers}
+    proc {InitInfoPlayers PortBombers}
         for I in 1..Input.nbBombers do
-            PosPlayers.I = player(port:PortBombers.I pos:{Cell.new pt(x:~1 y:~1)} lives:{Cell.new Input.nbLives}) % pt(x:~1 y:~1) == not on board
+            InfoPlayers.I = player(port:PortBombers.I pos:{Cell.new pt(x:~1 y:~1)} lives:{Cell.new Input.nbLives}) % pt(x:~1 y:~1) == not on board
         end
     end
 
@@ -46,19 +46,19 @@ define
     in
         PosExplosions = {GetPosExplosions Pos Input.fire ValidFlamePosition}
         for I in 1..{Record.width PosExplosions} do 
-            for PP in 1..{Record.width PosPlayers} do
-                if @(PosPlayers.PP.pos).x == PosExplosions.I.x andthen @(PosPlayers.PP.pos).y == PosExplosions.I.y then 
+            for PP in 1..{Record.width InfoPlayers} do
+                if @(InfoPlayers.PP.pos).x == PosExplosions.I.x andthen @(InfoPlayers.PP.pos).y == PosExplosions.I.y then 
                     ID Result 
                 in
-                    {Send PosPlayers.PP.port gotHit(ID Result)}
+                    {Send InfoPlayers.PP.port gotHit(ID Result)}
                     if Result \= null then
                         case Result
                         of death(NewLife) then
                             {Send Gui lifeUpdate(ID NewLife)}
-                            (PosPlayers.(ID.id).lives) := NewLife
+                            (InfoPlayers.(ID.id).lives) := NewLife
                             {Send Gui hidePlayer(ID)}
                             {Send NotificationM deadPlayer(ID)} % notify everyone
-                            (PosPlayers.(ID.id).pos) := pt(x:~1 y:~1)
+                            (InfoPlayers.(ID.id).pos) := pt(x:~1 y:~1)
                         [] shield(_) then
                             skip % player uses shield
                         end
@@ -86,7 +86,7 @@ define
     end
 
     proc {ExecuteMove ID Pos} Result in 
-        (PosPlayers.(ID.id).pos) := Pos
+        (InfoPlayers.(ID.id).pos) := Pos
         if @{List.nth Map {Pos2Index Pos}} == 5 then % walks on point
             {Send Gui hidePoint(Pos)}
             {List.nth Map {Pos2Index Pos}} := 0
@@ -137,8 +137,8 @@ in
 
         Gui = GuiPort
         {InitMap}
-        PosPlayers = {Tuple.make '#'() Input.nbBombers}
-        {InitPosPlayers PortBombers}
+        InfoPlayers = {Tuple.make '#'() Input.nbBombers}
+        {InitInfoPlayers PortBombers}
         NotificationM = NotificationManagerPort
 
         Port
@@ -149,7 +149,7 @@ in
         [] Message|T then
             case Message of nil then skip
             [] spawnPlayer(ID Pos) then
-                (PosPlayers.(ID.id).pos) := Pos
+                (InfoPlayers.(ID.id).pos) := Pos
             [] movePlayer(ID Pos) then
                 {ExecuteMove ID Pos}
             [] bombExploded(Pos) then
@@ -159,13 +159,13 @@ in
             [] getMapValue(X Y ?MapValue) then
                 MapValue = @{List.nth Map {Pos2Index pos(x:X y:Y)}}
             [] getPlayerLives(ID ?NbLives) then
-                NbLives = @(PosPlayers.(ID.id).lives)
+                NbLives = @(InfoPlayers.(ID.id).lives)
             [] getPlayersAlive(?PlayersAlive) then 
                 PlayersNotDead = {Cell.new '#'()}
             in
                 for I in 1..Input.nbBombers do
-                    if @(PosPlayers.I.lives) > 0 then PlayerID in
-                        {Send PosPlayers.I.port getId(PlayerID)}
+                    if @(InfoPlayers.I.lives) > 0 then PlayerID in
+                        {Send InfoPlayers.I.port getId(PlayerID)}
                         PlayersNotDead := {Tuple.append otherPlayer(PlayerID) @PlayersNotDead}
                     end
                 end
