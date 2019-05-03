@@ -41,8 +41,8 @@ main:
 	@make -s run
 
 workInProgress:
-	@make -s compilePlayers
-	#@make -s compileInput
+	#@make -s compilePlayers
+	@make -s compileInput
 	@make -s run
 
 clean:

@@ -246,6 +246,7 @@ in
       else 
          WinnerId = {ExecuteSimultaneous}
       end
+      {Show winnerID#WinnerId}
       {Send Board displayWinner(WinnerId)}
    end
 
