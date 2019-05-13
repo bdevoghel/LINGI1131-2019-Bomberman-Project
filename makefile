@@ -45,6 +45,28 @@ workInProgress:
 	@make -s compileInput
 	@make -s run
 
+scenarios:
+	@make -s compile
+	@make -s compilePlayers
+	@ozc -c src/scenarios/Input1.oz -o bin/Input.ozf
+	@echo 'SCENARIO 1'
+	@make -s run
+	@ozc -c src/scenarios/Input2.oz -o bin/Input.ozf
+	@echo 'SCENARIO 2'
+	@make -s run
+	@ozc -c src/scenarios/Input3.oz -o bin/Input.ozf
+	@echo 'SCENARIO 3'
+	@make -s run
+	@ozc -c src/scenarios/Input4.oz -o bin/Input.ozf
+	@echo 'SCENARIO 4'
+	@make -s run
+	@ozc -c src/scenarios/Input5.oz -o bin/Input.ozf
+	@echo 'SCENARIO 5'
+	@make -s run
+	@ozc -c src/scenarios/Input6.oz -o bin/Input.ozf
+	@echo 'SCENARIO 6'
+	@make -s run
+
 clean:
 	@rm -fv bin/PlayerManager.ozf
 	@rm -fv bin/BombManager.ozf
@@ -55,6 +77,12 @@ clean:
 	@rm -fv bin/Input.ozf
 	@rm -fv bin/Player005Umberto.ozf
 	@rm -fv bin/Player005Tozzi.ozf
+	@rm -fv bin/Input1.ozf
+	@rm -fv bin/Input2.ozf
+	@rm -fv bin/Input3.ozf
+	@rm -fv bin/Input4.ozf
+	@rm -fv bin/Input5.ozf
+	@rm -fv bin/Input6.ozf
 
 GUI.ozf:
 	@ozc -c src/GUI.oz -o bin/GUI.ozf
